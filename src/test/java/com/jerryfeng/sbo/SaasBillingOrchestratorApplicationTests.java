@@ -1,4 +1,4 @@
-package com.jerryfeng.saas_billing_orchestrator;
+package com.jerryfeng.sbo;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

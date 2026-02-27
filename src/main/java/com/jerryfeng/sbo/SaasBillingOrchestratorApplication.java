@@ -1,4 +1,4 @@
-package com.jerryfeng.saas_billing_orchestrator;
+package com.jerryfeng.sbo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
