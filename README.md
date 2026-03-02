@@ -1,56 +1,53 @@
-# SaaS Billing Orchestrator
+# SaaS Billing Orchestrator (Full-Stack)
 
-A cloud-native, event-driven billing and quota management engine designed for B2B SaaS platforms. This service bridges the gap between raw system usage and financial reconciliation, ensuring that API calls are metered and payments are processed with strict idempotency.
+A complete, cloud-native full-stack application designed to manage subscription lifecycles, real-time API rate limiting, and asynchronous payment processing for B2B SaaS platforms.
 
-## 🚀 Core Features
+This project demonstrates an end-to-end product architecture: a modern, interactive frontend dashboard powered by a mission-critical Spring Boot backend. It focuses heavily on financial data integrity, high-concurrency safeguards, and cloud-readiness.
 
-* **Strict Idempotency:** Implements unique database constraints and distributed locking to guarantee "Exactly-Once" processing for asynchronous Stripe payment webhooks, preventing duplicate billing.
-* **High-Throughput Quota Engine:** Manages subscription tiers and API rate limits, ensuring users cannot exceed their purchased compute/API allowances.
-* **Event-Driven Architecture:** Decouples core billing logic from downstream notification systems (e.g., email alerts for low quotas) using message queues to ensure high availability and low latency.
-* **Cloud-Native Ready:** Fully containerized for seamless deployment to AWS (EC2/ECS) with managed RDS.
+## 🚀 Core Product Features
 
-## 🛠️ Tech Stack
+* **Strict Payment Idempotency (Backend):** Implements unique database constraints to guarantee "Exactly-Once" processing for asynchronous Stripe webhooks, absolutely preventing duplicate billing during network retries.
+* **Interactive Quota Simulation (Frontend):** A dynamic UI dashboard allowing users to trigger test API requests, visually demonstrating real-time quota deduction and access denial.
+* **High-Throughput Rate Limiter (Backend):** Utilizes Redis to intercept incoming requests and manage API quotas in-memory, ensuring users cannot exceed their purchased compute limits.
+* **Event-Driven Decoupling (Backend):** Decouples core billing logic from downstream notification systems (e.g., quota depletion alerts) using message queues to ensure low-latency API responses.
 
+## 🛠️ Technical Stack
+
+**Backend (The Engine):**
 * **Language:** Java 17
 * **Framework:** Spring Boot 3 (Web, Data JPA, Validation)
 * **Database:** PostgreSQL 15
-* **Messaging/Caching:** RabbitMQ / Redis (Local), AWS SQS / ElastiCache (Production)
-* **External Integrations:** Stripe API (Billing & Subscriptions)
-* **DevOps:** Docker, Docker Compose, GitHub Actions
+* **Caching & Queues:** Redis, RabbitMQ
 
-## 🧠 Key Engineering Decisions
+**Frontend (The Interface):**
+* **Framework:** Vue.js / React (Modern SPA)
+* **Styling:** Tailwind CSS / Modern UI Components
+* **Integration:** Stripe Elements / Checkout
 
-1. **Why PostgreSQL?** Financial transactions and subscription states require strict ACID compliance. PostgreSQL provides the necessary transactional guarantees and robust constraint checking required for the webhook idempotency layer.
-2. **Handling Stripe Webhooks Safely:**
-   Network retries can cause Stripe to send the same `payment_intent.succeeded` event multiple times. This system uses the `stripe_event_id` as a unique, indexed constraint in the database. If a duplicate event arrives, the database rejects the insertion, allowing the API to safely return a `200 OK` to Stripe without double-crediting the user's account.
-3. **Decoupling via Message Queues:**
-   When a payment fails or a quota runs low, the system does not block the main thread to send an email. Instead, it publishes a `QuotaLowEvent` to a message broker. A separate consumer handles the third-party email API, significantly improving the response time of the primary orchestrator.
+**DevOps & Infrastructure:**
+* **Containerization:** Docker & Docker Compose
+* **Cloud Platform:** AWS (EC2, RDS)
+* **CI/CD:** GitHub Actions
+
+## 🧠 Architectural Highlights
+
+1. **Handling Stripe Webhooks Safely:**
+   Network retries can cause Stripe to send the same `payment_intent.succeeded` event multiple times. This backend uses the `stripe_event_id` as a unique, indexed constraint in PostgreSQL. Duplicate events are safely rejected at the database level, allowing the API to return a `200 OK` without double-crediting the user.
+2. **Redis-Backed Interceptors:**
+   Instead of querying the SQL database for every single user API request to check their quota, the system caches the remaining quota in Redis. A Spring `HandlerInterceptor` checks this cache in milliseconds, returning an `HTTP 429 Too Many Requests` if the limit is reached.
 
 ## 💻 Local Development Setup
 
-This project uses Docker Compose to provision the local infrastructure, eliminating the need for manual database installations.
+This project uses Docker Compose to provision the local infrastructure (Databases and Message Brokers).
 
 ### Prerequisites
-* Java 17+
-* Maven 3.8+
+* Java 17+ & Maven
+* Node.js & npm (For Frontend)
 * Docker Desktop
+* Stripe Test Account
 
-### Quick Start
+### Quick Start (Backend)
 
 1. **Start the Infrastructure:**
-   Run the following command in the project root to spin up PostgreSQL, Redis, and RabbitMQ.
-   `docker-compose up -d`
-
-2. **Configure Environment:**
-   Ensure your `src/main/resources/application.properties` points to the local Docker instances (default configuration is provided).
-
-3. **Run the Application:**
-   `./mvnw spring-boot:run`
-
-The application will start on `http://localhost:8080`.
-
-## 🧪 Testing
-
-Test coverage focuses heavily on the Service layer and Webhook controllers to ensure financial logic remains intact.
-
-`./mvnw test`
+   ```bash
+   docker-compose up -d
