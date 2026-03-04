@@ -6,6 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HomeController {
     @GetMapping("/")
     public String index() {
-        return "Welcome to the home page!";
+        return "Welcome to the home page2!";
     }
 }
