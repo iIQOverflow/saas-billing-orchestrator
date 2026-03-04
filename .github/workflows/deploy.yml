@@ -60,4 +60,4 @@ jobs:
             # Spring Boot prod profile will read the exported env vars used in application-prod.properties
             nohup java -jar \
               -Dspring.profiles.active=prod \
-              *.jar > application.log 2>&1 &
+              *.jar </dev/null > /home/ec2-user/app/application.log 2>&1 &
