@@ -21,7 +21,9 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: ./mvnw clean package -DskipTests
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
 
       - name: Copy JAR to EC2
         uses: appleboy/scp-action@master
@@ -40,22 +42,22 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Step 1: Stop the old Java application gracefully
-            killall java || true
-            
-            # Step 2: Dynamically fetch the database password from AWS SSM
-            # (Ensure the parameter name exactly matches what you created in AWS)
+            # Step 1: Stop the old Java application gracefully (if running)
+            pkill -f "java -jar" || true
+
+            # Step 2: Move to the app directory
+            cd /home/ec2-user/app
+
+            # Step 3: Dynamically fetch configuration from AWS SSM Parameter Store
+            # Make sure these parameter names exist and this EC2 instance role has SSM access.
             export BILLING_DB_PASS=$(aws ssm get-parameter --region ap-southeast-2 --name "/saas-billing-orchestrator/billing-db/postgres/password" --with-decryption --query "Parameter.Value" --output text)
             export BILLING_DB_URL=$(aws ssm get-parameter --region ap-southeast-2 --name "/saas-billing-orchestrator/billing-db/postgres/url" --with-decryption --query "Parameter.Value" --output text)
             export BILLING_DB_USERNAME=$(aws ssm get-parameter --region ap-southeast-2 --name "/saas-billing-orchestrator/billing-db/postgres/username" --with-decryption --query "Parameter.Value" --output text)
             export STRIPE_PUBLIC_KEY=$(aws ssm get-parameter --region ap-southeast-2 --name "/saas-billing-orchestrator/stripe/public_key" --with-decryption --query "Parameter.Value" --output text)
             export STRIPE_SECRET_KEY=$(aws ssm get-parameter --region ap-southeast-2 --name "/saas-billing-orchestrator/stripe/secret_key" --with-decryption --query "Parameter.Value" --output text)
-            
-            
-            # Step 3: Start the new application securely in the background
+
+            # Step 4: Start the new application in the background
+            # Spring Boot prod profile will read the exported env vars used in application-prod.properties
             nohup java -jar \
               -Dspring.profiles.active=prod \
-              -DB_URL=${{ secrets.DB_URL }} \
-              -DDB_USERNAME=${{ secrets.DB_USERNAME }} \
-              -DDB_PASSWORD=$DB_PASS \
-              /home/ec2-user/app/*.jar > /home/ec2-user/app/application.log 2>&1 &
+              *.jar > application.log 2>&1 &
