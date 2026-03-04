@@ -47,7 +47,8 @@ jobs:
 
             # Step 1: Stop the old Java application gracefully (if running)
             echo "--- Step 1: Stopping old app ---"
-            pkill -f "java -jar" || true
+            pkill java || true
+            sleep 2
 
             # Step 2: Move to the app directory
             
