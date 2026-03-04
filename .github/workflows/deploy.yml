@@ -61,3 +61,6 @@ jobs:
             nohup java -jar \
               -Dspring.profiles.active=prod \
               *.jar </dev/null > /home/ec2-user/app/application.log 2>&1 &
+            
+            # Step 5: Force the SSH session to close cleanly
+            exit 0
