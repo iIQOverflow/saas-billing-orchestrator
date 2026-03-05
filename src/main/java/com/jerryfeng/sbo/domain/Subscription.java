@@ -1,33 +1,50 @@
 package com.jerryfeng.sbo.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "subscriptions")
 public class Subscription extends BaseEntity {
 
+    // B2B Standard: The company owns the subscription, not the user.
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @JoinColumn(name = "tenant_id", nullable = false, unique = true)
+    private Tenant tenant;
 
     @Column(nullable = false)
-    private String planTier; // e.g., BASIC, PRO, ENTERPRISE
+    private String stripeCustomerId; // Links the company to their Stripe profile
 
     @Column(nullable = false)
-    private Long quotaTotal; // e.g., 10000 API calls
+    private String planTier;
 
     @Column(nullable = false)
-    private Long quotaUsed; // Tracks current usage
+    private Long quotaTotal;
 
     @Column(nullable = false)
-    private String status; // e.g., ACTIVE, PAST_DUE, CANCELED
+    private Long quotaUsed;
 
-    public User getUser() {
-        return user;
+    @Column(nullable = false)
+    private String status;
+
+    public Tenant getTenant() {
+        return tenant;
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public void setTenant(Tenant tenant) {
+        this.tenant = tenant;
+    }
+
+    public String getStripeCustomerId() {
+        return stripeCustomerId;
+    }
+
+    public void setStripeCustomerId(String stripeCustomerId) {
+        this.stripeCustomerId = stripeCustomerId;
     }
 
     public String getPlanTier() {

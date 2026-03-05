@@ -2,6 +2,9 @@ package com.jerryfeng.sbo.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -11,11 +14,10 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false, unique = true, updatable = false)
-    private String apiKey; // Used to authenticate their API requests
-
-    @Column(nullable = false)
-    private String stripeCustomerId; // Links to their Stripe billing profile
+    // Multi-Tenant Link: Every user belongs to a Company
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     public String getEmail() {
         return email;
@@ -25,19 +27,11 @@ public class User extends BaseEntity {
         this.email = email;
     }
 
-    public String getApiKey() {
-        return apiKey;
+    public Tenant getTenant() {
+        return tenant;
     }
 
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
-    }
-
-    public String getStripeCustomerId() {
-        return stripeCustomerId;
-    }
-
-    public void setStripeCustomerId(String stripeCustomerId) {
-        this.stripeCustomerId = stripeCustomerId;
+    public void setTenant(Tenant tenant) {
+        this.tenant = tenant;
     }
 }
