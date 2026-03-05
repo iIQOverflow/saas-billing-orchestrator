@@ -1,53 +1,48 @@
-# SaaS Billing Orchestrator (Full-Stack)
+# Multi-Tenant SaaS API Orchestrator
 
-A complete, cloud-native full-stack application designed to manage subscription lifecycles, real-time API rate limiting, and asynchronous payment processing for B2B SaaS platforms.
+An enterprise-grade, B2B backend engine designed to power SaaS platforms. This system orchestrates tenant data isolation, automated subscription lifecycles, and real-time API usage metering.
 
-This project demonstrates an end-to-end product architecture: a modern, interactive frontend dashboard powered by a mission-critical Spring Boot backend. It focuses heavily on financial data integrity, high-concurrency safeguards, and cloud-readiness.
+Built with an "Evolutionary Architecture" mindset, the foundation is strictly multi-tenant. It solves the core challenges of modern B2B products: financial data integrity, high-concurrency rate limiting, and cross-tenant security.
 
 ## 🚀 Core Product Features
 
-* **Strict Payment Idempotency (Backend):** Implements unique database constraints to guarantee "Exactly-Once" processing for asynchronous Stripe webhooks, absolutely preventing duplicate billing during network retries.
-* **Interactive Quota Simulation (Frontend):** A dynamic UI dashboard allowing users to trigger test API requests, visually demonstrating real-time quota deduction and access denial.
-* **High-Throughput Rate Limiter (Backend):** Utilizes Redis to intercept incoming requests and manage API quotas in-memory, ensuring users cannot exceed their purchased compute limits.
-* **Event-Driven Decoupling (Backend):** Decouples core billing logic from downstream notification systems (e.g., quota depletion alerts) using message queues to ensure low-latency API responses.
+* **B2B Multi-Tenancy:** The database schema inherently separates identity (`User`) from billing (`Tenant`), ensuring strict data isolation across different corporate clients.
+* **Idempotent Billing Engine:** Integrates with Stripe webhooks using robust database constraints to guarantee "exactly-once" payment processing during network retries, completely eliminating duplicate billing risks.
+* **High-Throughput Usage Metering:** Utilizes a Redis-backed Spring `HandlerInterceptor` to track and enforce API quotas in milliseconds, protecting system compute resources from abuse.
+* **Event-Driven Audit Trails:** Every payment state change is recorded as an immutable `PaymentEvent`, linked directly to the `Tenant` for strict financial compliance.
 
 ## 🛠️ Technical Stack
 
-**Backend (The Engine):**
+**Core Backend:**
 * **Language:** Java 17
-* **Framework:** Spring Boot 3 (Web, Data JPA, Validation)
-* **Database:** PostgreSQL 15
-* **Caching & Queues:** Redis, RabbitMQ
+* **Framework:** Spring Boot 3 (Web, Data JPA)
+* **Database:** PostgreSQL 15 (Relational Data & Idempotency Locks)
+* **Caching & Metering:** Redis (In-Memory Rate Limiting)
 
-**Frontend (The Interface):**
-* **Framework:** Vue.js / React (Modern SPA)
-* **Styling:** Tailwind CSS / Modern UI Components
-* **Integration:** Stripe Elements / Checkout
+**External Integrations:**
+* **Billing Gateway:** Stripe Java SDK & Webhooks
 
-**DevOps & Infrastructure:**
+**Infrastructure:**
 * **Containerization:** Docker & Docker Compose
-* **Cloud Platform:** AWS (EC2, RDS)
-* **CI/CD:** GitHub Actions
 
 ## 🧠 Architectural Highlights
 
-1. **Handling Stripe Webhooks Safely:**
-   Network retries can cause Stripe to send the same `payment_intent.succeeded` event multiple times. This backend uses the `stripe_event_id` as a unique, indexed constraint in PostgreSQL. Duplicate events are safely rejected at the database level, allowing the API to return a `200 OK` without double-crediting the user.
-2. **Redis-Backed Interceptors:**
-   Instead of querying the SQL database for every single user API request to check their quota, the system caches the remaining quota in Redis. A Spring `HandlerInterceptor` checks this cache in milliseconds, returning an `HTTP 429 Too Many Requests` if the limit is reached.
+1. **The "Tenant" as the Source of Truth:**
+   Unlike simple B2C applications, subscriptions and API Keys are owned by the `Tenant` (Company), not the individual `User`. This allows seamless scaling as a client adds more employees to their workspace.
+2. **Defeating the "Double Charge" (Idempotency):**
+   If Stripe sends duplicate `payment_intent.succeeded` events due to network timeouts, the system relies on PostgreSQL unique constraints on the `stripe_event_id` to safely reject the duplicate, returning an `HTTP 200 OK` without double-crediting the tenant's quota.
 
 ## 💻 Local Development Setup
 
-This project uses Docker Compose to provision the local infrastructure (Databases and Message Brokers).
+This project uses Docker Compose to instantly provision the required backing databases.
 
 ### Prerequisites
 * Java 17+ & Maven
-* Node.js & npm (For Frontend)
 * Docker Desktop
-* Stripe Test Account
+* Stripe Test Account Keys
 
-### Quick Start (Backend)
+### Quick Start
 
-1. **Start the Infrastructure:**
+1. **Provision Infrastructure:**
    ```bash
    docker-compose up -d
