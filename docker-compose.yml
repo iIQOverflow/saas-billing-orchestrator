@@ -3,9 +3,9 @@ services:
     image: postgres:15-alpine
     container_name: sbo-postgres
     environment:
-      POSTGRES_USER: user
+      POSTGRES_USER: sbo_admin
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: billing_db
+      POSTGRES_DB: sbo_dev
     ports:
       - "5432:5432"
     volumes:
