@@ -33,3 +33,5 @@ build/
 .vscode/
 
 .env
+
+/start-db-tunnel.sh
