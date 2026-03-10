@@ -11,13 +11,12 @@ import jakarta.persistence.Table;
 @Table(name = "subscriptions")
 public class Subscription extends BaseEntity {
 
-    // B2B Standard: The company owns the subscription, not the user.
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false, unique = true)
     private Tenant tenant;
 
-    @Column(nullable = false)
-    private String stripeCustomerId; // Links the company to their Stripe profile
+    @Column(nullable = false, unique = true)
+    private String stripeCustomerId;
 
     @Column(nullable = false)
     private String planTier;
