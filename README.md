@@ -1,48 +1,154 @@
-# Multi-Tenant SaaS API Orchestrator
+# Multi-Tenant SaaS Billing Orchestrator
 
-An enterprise-grade, B2B backend engine designed to power SaaS platforms. This system orchestrates tenant data isolation, automated subscription lifecycles, and real-time API usage metering.
+Production-focused Spring Boot backend for multi-tenant SaaS billing, Stripe-based subscription fulfillment, and Redis-backed API quota enforcement.
 
-Built with an "Evolutionary Architecture" mindset, the foundation is strictly multi-tenant. It solves the core challenges of modern B2B products: financial data integrity, high-concurrency rate limiting, and cross-tenant security.
+## Implemented Architecture
 
-## Core Product Features
+- Tenant-scoped data model (`tenants`, `users`, `subscriptions`, `payment_events`)
+- Flyway-managed schema migrations (no runtime schema mutation in dev/prod)
+- JWT auth for human endpoints (`/api/auth/**`, `/api/checkout/**`)
+- API-key interceptor for machine endpoints (`/api/v1/**`)
+- Redis atomic quota decrement via Lua script
+- Idempotent Stripe webhook processing (`invoice.paid`) using DB unique constraint
+- Scheduled Redis -> PostgreSQL quota reconciliation
 
-* **B2B Multi-Tenancy:** The database schema inherently separates identity (`User`) from billing (`Tenant`), ensuring strict data isolation across different corporate clients.
-* **Idempotent Billing Engine:** Integrates with Stripe webhooks using robust database constraints to guarantee "exactly-once" payment processing during network retries, completely eliminating duplicate billing risks.
-* **High-Throughput Usage Metering:** Utilizes a Redis-backed Spring `HandlerInterceptor` to track and enforce API quotas in milliseconds, protecting system compute resources from abuse.
-* **Event-Driven Audit Trails:** Every payment state change is recorded as an immutable `PaymentEvent`, linked directly to the `Tenant` for strict financial compliance.
+## Tech Stack
 
-## Technical Stack
+- Java 17
+- Spring Boot 3.5
+- Spring Data JPA + PostgreSQL
+- Spring Security + JWT (jjwt)
+- Redis (Spring Data Redis)
+- Flyway
+- Stripe Java SDK
 
-**Core Backend:**
-* **Language:** Java 17
-* **Framework:** Spring Boot 3 (Web, Data JPA)
-* **Database:** PostgreSQL 15 (Relational Data & Idempotency Locks)
-* **Caching & Metering:** Redis (In-Memory Rate Limiting)
+## Prerequisites
 
-**External Integrations:**
-* **Billing Gateway:** Stripe Java SDK & Webhooks
+- Java 17+
+- Maven 3.9+
+- Docker Desktop
+- Stripe test account keys
 
-**Infrastructure:**
-* **Containerization:** Docker & Docker Compose
+## Local Setup
 
-## Architectural Highlights
+1. Start dependencies:
 
-1. **The "Tenant" as the Source of Truth:**
-   Unlike simple B2C applications, subscriptions and API Keys are owned by the `Tenant` (Company), not the individual `User`. This allows seamless scaling as a client adds more employees to their workspace.
-2. **Defeating the "Double Charge" (Idempotency):**
-   If Stripe sends duplicate `payment_intent.succeeded` events due to network timeouts, the system relies on PostgreSQL unique constraints on the `stripe_event_id` to safely reject the duplicate, returning an `HTTP 200 OK` without double-crediting the tenant's quota.
+```bash
+docker-compose up -d
+```
 
-## Local Development Setup
+2. Export environment variables:
 
-This project uses Docker Compose to instantly provision the required backing databases.
+```bash
+set SPRING_PROFILES_ACTIVE=dev
+set BILLING_DB_URL=jdbc:postgresql://localhost:5432/sbo_dev
+set BILLING_DB_USERNAME=sbo_admin
+set BILLING_DB_PASS=password
+set REDIS_HOST=localhost
+set REDIS_PORT=6379
+set STRIPE_SECRET_KEY=sk_test_xxx
+set STRIPE_WEBHOOK_SECRET=whsec_xxx
+set APP_JWT_SECRET=replace-with-at-least-32-characters
+```
 
-### Prerequisites
-* Java 17+ & Maven
-* Docker Desktop
-* Stripe Test Account Keys
+3. Run app:
 
-### Quick Start
+```bash
+mvn spring-boot:run
+```
 
-1. **Provision Infrastructure:**
-   ```bash
-   docker-compose up -d
+Flyway auto-runs migration from `src/main/resources/db/migration/V1__baseline_schema.sql` on startup.
+
+## Seed Data (Dev)
+
+Use SQL to create a tenant/user/subscription for local testing:
+
+```sql
+INSERT INTO tenants(company_name, tenant_api_key, quota_balance, create_time, update_time)
+VALUES ('Acme Inc', 'acme_prod_demo_key', 10000, now(), now());
+
+INSERT INTO subscriptions(tenant_id, stripe_customer_id, plan_tier, quota_total, quota_used, status, create_time, update_time)
+VALUES (
+  (SELECT id FROM tenants WHERE tenant_api_key = 'acme_prod_demo_key'),
+  'cus_test_acme_001',
+  'PRO',
+  10000,
+  0,
+  'ACTIVE',
+  now(),
+  now()
+);
+
+-- Generate BCrypt hash locally (example password: P@ssw0rd!)
+INSERT INTO users(tenant_id, email, password_hash, create_time, update_time)
+VALUES (
+  (SELECT id FROM tenants WHERE tenant_api_key = 'acme_prod_demo_key'),
+  'admin@acme.com',
+  '<BCrypt_HASH_FOR_YOUR_PASSWORD>',
+  now(),
+  now()
+);
+```
+
+## API Quick Checks
+
+### 1) Login (`/api/auth/login`)
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"admin@acme.com\",\"password\":\"P@ssw0rd!\"}"
+```
+
+### 2) Create Checkout Session (`/api/checkout/create-session`)
+
+```bash
+curl -X POST http://localhost:8080/api/checkout/create-session ^
+  -H "Authorization: Bearer <JWT_TOKEN>" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"priceId\":\"price_xxx\",\"successUrl\":\"https://example.com/success\",\"cancelUrl\":\"https://example.com/cancel\"}"
+```
+
+### 3) M2M API (`/api/v1/process-data`)
+
+```bash
+curl -X POST http://localhost:8080/api/v1/process-data ^
+  -H "Authorization: Bearer acme_prod_demo_key" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"action\":\"analyze\",\"dataPayload\":{\"text\":\"hello\"}}"
+```
+
+## Stripe Webhook Test
+
+1. Start Stripe CLI forwarding:
+
+```bash
+stripe listen --forward-to localhost:8080/api/webhooks/stripe
+```
+
+2. Copy generated webhook secret into `STRIPE_WEBHOOK_SECRET`.
+
+3. Trigger test event:
+
+```bash
+stripe trigger invoice.paid
+```
+
+The webhook is idempotent by `payment_events.stripe_event_id` unique constraint.
+
+## Testing
+
+Run tests:
+
+```bash
+mvn test
+```
+
+`application-test.properties` uses in-memory H2 and disables scheduling to keep tests deterministic.
+
+## Notes on Secrets
+
+- Do not commit real Stripe keys.
+- `.env` is ignored by git; keep only local/dev test values there.
+- Use environment variables or secret manager values in production.
+

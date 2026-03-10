@@ -8,12 +8,14 @@ import jakarta.persistence.Table;
 @Table(name = "tenants")
 public class Tenant extends BaseEntity {
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String companyName;
 
-    // The API key the company uses to access your service
     @Column(nullable = false, unique = true, updatable = false)
     private String tenantApiKey;
+
+    @Column(nullable = false)
+    private Long quotaBalance = 0L;
 
     public String getCompanyName() {
         return companyName;
@@ -29,5 +31,13 @@ public class Tenant extends BaseEntity {
 
     public void setTenantApiKey(String tenantApiKey) {
         this.tenantApiKey = tenantApiKey;
+    }
+
+    public Long getQuotaBalance() {
+        return quotaBalance;
+    }
+
+    public void setQuotaBalance(Long quotaBalance) {
+        this.quotaBalance = quotaBalance;
     }
 }

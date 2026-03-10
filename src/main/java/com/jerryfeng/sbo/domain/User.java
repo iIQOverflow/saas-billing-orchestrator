@@ -14,7 +14,9 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // Multi-Tenant Link: Every user belongs to a Company
+    @Column(nullable = false)
+    private String passwordHash;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)
     private Tenant tenant;
@@ -25,6 +27,14 @@ public class User extends BaseEntity {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public Tenant getTenant() {

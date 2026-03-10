@@ -2,8 +2,11 @@ package com.jerryfeng.sbo.controller;
 
 import com.jerryfeng.sbo.dto.CheckoutRequest;
 import com.jerryfeng.sbo.dto.CheckoutResponse;
-import com.jerryfeng.sbo.service.StripeCheckoutService;
+import com.jerryfeng.sbo.security.AuthenticatedUser;
+import com.jerryfeng.sbo.service.CheckoutService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,21 +16,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/checkout")
 public class CheckoutController {
 
-    private final StripeCheckoutService checkoutService;
+    private final CheckoutService checkoutService;
 
-    // Constructor Injection (Strictly preferred over @Autowired field injection)
-    public CheckoutController(StripeCheckoutService checkoutService) {
+    public CheckoutController(CheckoutService checkoutService) {
         this.checkoutService = checkoutService;
     }
 
     @PostMapping("/create-session")
-    public ResponseEntity<CheckoutResponse> createSession(@RequestBody CheckoutRequest request) {
-        // Basic input validation
-        if (request.priceId() == null || request.priceId().isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<CheckoutResponse> createSession(@Valid @RequestBody CheckoutRequest request,
+                                                          @AuthenticationPrincipal AuthenticatedUser user) {
 
-        CheckoutResponse response = checkoutService.createCheckoutSession(request);
+        CheckoutResponse response = checkoutService.createCheckoutSession(
+            user.getUserId(),
+            user.getTenantId(),
+            request
+        );
+
         return ResponseEntity.ok(response);
     }
 }

@@ -1,8 +1,8 @@
 package com.jerryfeng.sbo.controller;
 
+import com.jerryfeng.sbo.service.StripeWebhookService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
-import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,44 +24,29 @@ public class WebhookController {
     @Value("${stripe.webhook.secret}")
     private String endpointSecret;
 
+    private final StripeWebhookService stripeWebhookService;
+
+    public WebhookController(StripeWebhookService stripeWebhookService) {
+        this.stripeWebhookService = stripeWebhookService;
+    }
+
     @PostMapping("/stripe")
-    public ResponseEntity<String> handleStripeWebhook(
+    public ResponseEntity<Void> handleStripeWebhook(
         @RequestHeader("Stripe-Signature") String sigHeader,
-        @RequestBody String payload) { // MUST be a raw String for cryptographic hashing
+        @RequestBody String payload) {
 
         Event event;
-
         try {
-            // 1. Strict Cryptographic Verification
             event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
         } catch (SignatureVerificationException e) {
-            log.error("CRITICAL SECURITY: Invalid Stripe signature detected. Possible spoofing attack.", e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid signature");
+            log.error("Invalid Stripe webhook signature", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
-            log.error("CRITICAL FATAL: Webhook payload parsing failed.", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid payload");
+            log.error("Failed to parse Stripe webhook payload", e);
+            return ResponseEntity.badRequest().build();
         }
 
-        // 2. Event Routing
-        log.info("Secure Webhook received! Type: {}", event.getType());
-
-        if ("checkout.session.completed".equals(event.getType())) {
-            // Deserialize the nested object safely
-            Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-
-            if (session != null) {
-                log.info("B2B Payment Authorized for Session ID: {}", session.getId());
-                log.info("Customer ID: {}", session.getCustomer());
-
-                // ARCHITECTURAL PLACEHOLDER: The Idempotency Lock
-                // Here is where we will write the PostgreSQL INSERT ON CONFLICT logic
-                // to update the Tenant's quota securely.
-            }
-        } else {
-            log.info("Unhandled event type: {}", event.getType());
-        }
-
-        // 3. Mandatory Fast Acknowledgment (Prevent Retry Storms)
-        return ResponseEntity.ok("Success");
+        stripeWebhookService.handleEvent(event);
+        return ResponseEntity.ok().build();
     }
 }

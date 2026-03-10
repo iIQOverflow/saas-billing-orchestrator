@@ -15,20 +15,24 @@ public class StripeCheckoutService {
 
     private static final Logger log = LoggerFactory.getLogger(StripeCheckoutService.class);
 
-    // Injected Dependency: No static global state
     private final StripeClient stripeClient;
 
     public StripeCheckoutService(StripeClient stripeClient) {
         this.stripeClient = stripeClient;
     }
 
-    public CheckoutResponse createCheckoutSession(CheckoutRequest request) {
+    public CheckoutResponse createCheckoutSession(CheckoutRequest request,
+                                                  String stripeCustomerId,
+                                                  Long tenantId,
+                                                  String planTier) {
         try {
-            // The modern Builder pattern for Stripe payloads
             SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setCustomer(stripeCustomerId)
                 .setSuccessUrl(request.successUrl())
                 .setCancelUrl(request.cancelUrl())
+                .putMetadata("tenantId", String.valueOf(tenantId))
+                .putMetadata("planTier", planTier)
                 .addLineItem(
                     SessionCreateParams.LineItem.builder()
                         .setQuantity(1L)
@@ -37,15 +41,14 @@ public class StripeCheckoutService {
                 )
                 .build();
 
-            // Using the new Service-Based SDK Pattern
             Session session = stripeClient.v1().checkout().sessions().create(params);
 
-            log.info("Successfully generated Thread-Safe Stripe Checkout Session: {}", session.getId());
+            log.info("Checkout session created. sessionId={} tenantId={}", session.getId(), tenantId);
             return new CheckoutResponse(session.getUrl());
 
         } catch (StripeException e) {
-            log.error("CRITICAL: Failed to communicate with Stripe API", e);
-            throw new RuntimeException("Payment service is currently unavailable.", e);
+            log.error("Failed to create Stripe checkout session for tenantId={}", tenantId, e);
+            throw new IllegalStateException("Payment service is currently unavailable", e);
         }
     }
 }
