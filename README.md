@@ -146,7 +146,7 @@ mvn test
 
 `application-test.properties` uses in-memory H2 and disables scheduling to keep tests deterministic.
 
-## Notes on Secrets
+## Notes on Secrets 
 
 - Do not commit real Stripe keys.
 - `.env` is ignored by git; keep only local/dev test values there.
