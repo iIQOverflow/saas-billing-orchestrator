@@ -8,7 +8,7 @@
 		<version>3.5.11</version>
 		<relativePath/>
 	</parent>
-	<groupId>com.jerryfeng</groupId>
+	<groupId>com.jyf</groupId>
 	<artifactId>saas-billing-orchestrator</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>saas-billing-orchestrator</name>
