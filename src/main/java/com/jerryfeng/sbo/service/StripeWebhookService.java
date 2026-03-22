@@ -1,18 +1,14 @@
 package com.jerryfeng.sbo.service;
 
-import com.jerryfeng.sbo.domain.PaymentEvent;
 import com.jerryfeng.sbo.domain.Subscription;
 import com.jerryfeng.sbo.domain.Tenant;
 import com.jerryfeng.sbo.metering.RedisQuotaService;
-import com.jerryfeng.sbo.repository.PaymentEventRepository;
 import com.jerryfeng.sbo.repository.SubscriptionRepository;
 import com.jerryfeng.sbo.repository.TenantRepository;
 import com.stripe.model.Event;
 import com.stripe.model.Invoice;
-import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,60 +18,42 @@ public class StripeWebhookService {
     private static final Logger log = LoggerFactory.getLogger(StripeWebhookService.class);
     private static final String INVOICE_PAID_EVENT = "invoice.paid";
 
-    private final PaymentEventRepository paymentEventRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final TenantRepository tenantRepository;
     private final RedisQuotaService redisQuotaService;
+    private final PaymentIdempotencyService idempotencyService; // Inject the barrier
 
-    public StripeWebhookService(PaymentEventRepository paymentEventRepository,
-                                SubscriptionRepository subscriptionRepository,
+    public StripeWebhookService(SubscriptionRepository subscriptionRepository,
                                 TenantRepository tenantRepository,
-                                RedisQuotaService redisQuotaService) {
-        this.paymentEventRepository = paymentEventRepository;
+                                RedisQuotaService redisQuotaService,
+                                PaymentIdempotencyService idempotencyService) {
         this.subscriptionRepository = subscriptionRepository;
         this.tenantRepository = tenantRepository;
         this.redisQuotaService = redisQuotaService;
+        this.idempotencyService = idempotencyService;
     }
 
     @Transactional
     public void handleEvent(Event event) {
         if (!INVOICE_PAID_EVENT.equals(event.getType())) {
-            log.info("Webhook ignored. type={}", event.getType());
             return;
         }
 
         Invoice invoice = (Invoice) event.getDataObjectDeserializer()
-            .getObject()
-            .orElseThrow(() -> new IllegalArgumentException("Unable to deserialize invoice payload"));
+                .getObject()
+                .orElseThrow(() -> new IllegalArgumentException("Unable to deserialize payload"));
 
-        String customerId = invoice.getCustomer();
-        if (customerId == null || customerId.isBlank()) {
-            throw new IllegalArgumentException("Invoice is missing Stripe customer id");
+        Subscription subscription = subscriptionRepository.findByStripeCustomerId(invoice.getCustomer())
+                .orElseThrow(() -> new IllegalArgumentException("Subscription not found"));
+
+        // 1. Attempt to acquire the database lock
+        if (!idempotencyService.acquireLock(event, subscription)) {
+            // Lock failed (duplicate). Return gracefully so the Controller sends 200 OK.
+            return;
         }
 
-        Subscription subscription = subscriptionRepository.findByStripeCustomerId(customerId)
-            .orElseThrow(() -> new IllegalArgumentException("Subscription not found for Stripe customer"));
-
-        if (registerPaymentEvent(event, subscription)) {
-            applyQuotaReset(subscription);
-        }
-    }
-
-    private boolean registerPaymentEvent(Event event, Subscription subscription) {
-        PaymentEvent paymentEvent = new PaymentEvent();
-        paymentEvent.setStripeEventId(event.getId());
-        paymentEvent.setTenant(subscription.getTenant());
-        paymentEvent.setEventType(event.getType());
-        paymentEvent.setStatus("PROCESSED");
-        paymentEvent.setProcessedAt(LocalDateTime.now());
-
-        try {
-            paymentEventRepository.saveAndFlush(paymentEvent);
-            return true;
-        } catch (DataIntegrityViolationException ex) {
-            log.info("Duplicate webhook ignored. stripeEventId={}", event.getId());
-            return false;
-        }
+        // 2. Lock acquired (first time seeing this event). Safely update the money.
+        applyQuotaReset(subscription);
     }
 
     private void applyQuotaReset(Subscription subscription) {
@@ -90,7 +68,6 @@ public class StripeWebhookService {
         subscriptionRepository.save(subscription);
 
         redisQuotaService.setQuota(tenant.getId(), updatedQuota);
-
         log.info("Invoice fulfillment completed. tenantId={} quota={}", tenant.getId(), updatedQuota);
     }
 }
