@@ -1,29 +1,21 @@
 package com.jerryfeng.sbo.metering;
 
-import com.jerryfeng.sbo.domain.Tenant;
-import com.jerryfeng.sbo.repository.TenantRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.Optional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import java.io.IOException;
 
 @Component
 public class TenantApiKeyInterceptor implements HandlerInterceptor {
 
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final Duration AUTH_CACHE_TTL = Duration.ofMinutes(60);
+    private final M2MGatewayService gatewayService;
 
-    private final TenantRepository tenantRepository;
-    private final RedisQuotaService redisQuotaService;
-
-    public TenantApiKeyInterceptor(TenantRepository tenantRepository, RedisQuotaService redisQuotaService) {
-        this.tenantRepository = tenantRepository;
-        this.redisQuotaService = redisQuotaService;
+    public TenantApiKeyInterceptor(M2MGatewayService gatewayService) {
+        this.gatewayService = gatewayService;
     }
 
     @Override
@@ -36,60 +28,32 @@ public class TenantApiKeyInterceptor implements HandlerInterceptor {
         }
 
         String tenantApiKey = header.substring(BEARER_PREFIX.length()).trim();
-        Long tenantId = resolveTenantId(tenantApiKey).orElse(null);
+
+        // 1. Resolve Identity
+        Long tenantId = gatewayService.resolveTenantId(tenantApiKey).orElse(null);
         if (tenantId == null) {
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid API key");
             return false;
         }
 
+        // 2. Thread-Safe Quota Consumption
         long remainingQuota;
         try {
-            remainingQuota = consumeQuotaWithBootstrap(tenantId);
-        } catch (RuntimeException ex) {
+            remainingQuota = gatewayService.consumeQuotaSafely(tenantId);
+        } catch (Exception ex) {
             response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value(), "Quota service unavailable");
             return false;
         }
 
+        // 3. Rate Limit Enforcement
         if (remainingQuota == RedisQuotaService.QUOTA_EXHAUSTED) {
             response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(), "Quota exhausted");
             return false;
         }
 
-        if (remainingQuota == RedisQuotaService.QUOTA_NOT_INITIALIZED) {
-            response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value(), "Quota cache unavailable");
-            return false;
-        }
-
+        // 4. Request Decoration
         request.setAttribute(RequestAttributes.TENANT_ID, tenantId);
         request.setAttribute(RequestAttributes.REMAINING_QUOTA, remainingQuota);
         return true;
-    }
-
-    private Optional<Long> resolveTenantId(String tenantApiKey) {
-        Optional<Long> cachedTenantId = redisQuotaService.getTenantIdByApiKey(tenantApiKey);
-        if (cachedTenantId.isPresent()) {
-            return cachedTenantId;
-        }
-
-        Optional<Tenant> tenant = tenantRepository.findByTenantApiKey(tenantApiKey);
-        tenant.ifPresent(value ->
-            redisQuotaService.cacheTenantApiKey(tenantApiKey, value.getId(), AUTH_CACHE_TTL)
-        );
-
-        return tenant.map(Tenant::getId);
-    }
-
-    private long consumeQuotaWithBootstrap(Long tenantId) {
-        long result = redisQuotaService.consumeQuota(tenantId);
-
-        if (result == RedisQuotaService.QUOTA_NOT_INITIALIZED) {
-            Tenant tenant = tenantRepository.findById(tenantId)
-                .orElseThrow(() -> new IllegalArgumentException("Tenant not found for id " + tenantId));
-
-            redisQuotaService.initializeQuotaIfMissing(tenantId, tenant.getQuotaBalance());
-            result = redisQuotaService.consumeQuota(tenantId);
-        }
-
-        return result;
     }
 }
