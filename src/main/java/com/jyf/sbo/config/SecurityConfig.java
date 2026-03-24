@@ -30,6 +30,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/api/auth/**", "/api/webhooks/stripe", "/actuator/health", "/api/v1/**")
                 .permitAll()
+                .requestMatchers("/api/checkout/**")
+                .authenticated()
                 .anyRequest()
                 .authenticated())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
