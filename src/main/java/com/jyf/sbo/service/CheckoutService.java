@@ -42,7 +42,7 @@ public class CheckoutService {
             request,
             subscription.getStripeCustomerId(),
             tenantId,
-            subscription.getPlanTier()
+            subscription.getPlanCode()
         );
     }
 

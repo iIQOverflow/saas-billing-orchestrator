@@ -1,5 +1,6 @@
 package com.jyf.sbo.service;
 
+import com.jyf.sbo.domain.PlanCode;
 import com.jyf.sbo.domain.Subscription;
 import com.jyf.sbo.domain.Tenant;
 import com.jyf.sbo.domain.User;
@@ -47,12 +48,13 @@ public class DashboardService {
         long remaining = tenant.getQuotaBalance();
         long used = Math.max(0L, total - remaining);
         int usagePercent = total <= 0 ? 0 : (int) ((used * 100.0d) / total);
+        PlanCode currentPlan = subscription.getPlanCode();
 
         return new DashboardSummaryResponse(
             new DashboardSummaryResponse.TenantSummary(tenant.getCompanyName()),
-            new DashboardSummaryResponse.SubscriptionSummary(subscription.getPlanTier(), subscription.getStatus()),
+            new DashboardSummaryResponse.SubscriptionSummary(currentPlan.name(), subscription.getStatus()),
             new DashboardSummaryResponse.QuotaSummary(total, remaining, used, usagePercent),
-            planCatalogService.getPlans(subscription.getPlanTier())
+            planCatalogService.getPlans(currentPlan)
         );
     }
 }

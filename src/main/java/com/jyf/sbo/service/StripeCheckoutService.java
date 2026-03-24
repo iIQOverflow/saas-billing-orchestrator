@@ -1,5 +1,6 @@
 package com.jyf.sbo.service;
 
+import com.jyf.sbo.domain.PlanCode;
 import com.jyf.sbo.dto.CheckoutRequest;
 import com.jyf.sbo.dto.CheckoutResponse;
 import com.stripe.StripeClient;
@@ -24,7 +25,7 @@ public class StripeCheckoutService {
     public CheckoutResponse createCheckoutSession(CheckoutRequest request,
                                                   String stripeCustomerId,
                                                   Long tenantId,
-                                                  String planTier) {
+                                                  PlanCode planCode) {
         try {
             SessionCreateParams params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
@@ -32,7 +33,7 @@ public class StripeCheckoutService {
                 .setSuccessUrl(request.successUrl())
                 .setCancelUrl(request.cancelUrl())
                 .putMetadata("tenantId", String.valueOf(tenantId))
-                .putMetadata("planTier", planTier)
+                .putMetadata("planTier", planCode.name())
                 .addLineItem(
                     SessionCreateParams.LineItem.builder()
                         .setQuantity(1L)

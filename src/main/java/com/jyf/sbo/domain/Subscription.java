@@ -54,6 +54,18 @@ public class Subscription extends BaseEntity {
         this.planTier = planTier;
     }
 
+    public PlanCode getPlanCode() {
+        return PlanCode.fromPersistence(planTier);
+    }
+
+    public void setPlanCode(PlanCode planCode) {
+        if (planCode == null) {
+            throw new IllegalArgumentException("planCode must not be null");
+        }
+
+        this.planTier = planCode.name();
+    }
+
     public Long getQuotaTotal() {
         return quotaTotal;
     }

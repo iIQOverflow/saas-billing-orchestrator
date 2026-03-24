@@ -61,25 +61,32 @@ class DashboardControllerIT {
             .andExpect(jsonPath("$.tenant.companyName").value("Acme Inc"))
             .andExpect(jsonPath("$.subscription.planCode").value("PRO"))
             .andExpect(jsonPath("$.subscription.status").value("ACTIVE"))
-            .andExpect(jsonPath("$.quota.total").value(10000))
-            .andExpect(jsonPath("$.quota.remaining").value(8750))
-            .andExpect(jsonPath("$.quota.used").value(1250))
+            .andExpect(jsonPath("$.quota.total").value(1000))
+            .andExpect(jsonPath("$.quota.remaining").value(875))
+            .andExpect(jsonPath("$.quota.used").value(125))
             .andExpect(jsonPath("$.quota.usagePercent").value(12))
-            .andExpect(jsonPath("$.plans", hasSize(2)))
+            .andExpect(jsonPath("$.plans", hasSize(3)))
             .andExpect(jsonPath("$.plans[0].planCode").value("FREE"))
             .andExpect(jsonPath("$.plans[0].displayName").value("Free"))
             .andExpect(jsonPath("$.plans[0].monthlyPriceLabel").value("$0"))
-            .andExpect(jsonPath("$.plans[0].quotaTotal").value(1000))
+            .andExpect(jsonPath("$.plans[0].quotaTotal").value(10))
             .andExpect(jsonPath("$.plans[0].current").value(false))
-            .andExpect(jsonPath("$.plans[1].planCode").value("PRO"))
-            .andExpect(jsonPath("$.plans[1].displayName").value("Pro"))
-            .andExpect(jsonPath("$.plans[1].monthlyPriceLabel").value("$29"))
-            .andExpect(jsonPath("$.plans[1].quotaTotal").value(10000))
-            .andExpect(jsonPath("$.plans[1].current").value(true))
+            .andExpect(jsonPath("$.plans[1].planCode").value("PLUS"))
+            .andExpect(jsonPath("$.plans[1].displayName").value("Plus"))
+            .andExpect(jsonPath("$.plans[1].monthlyPriceLabel").value("$9"))
+            .andExpect(jsonPath("$.plans[1].quotaTotal").value(100))
+            .andExpect(jsonPath("$.plans[1].current").value(false))
+            .andExpect(jsonPath("$.plans[2].planCode").value("PRO"))
+            .andExpect(jsonPath("$.plans[2].displayName").value("Pro"))
+            .andExpect(jsonPath("$.plans[2].monthlyPriceLabel").value("$29"))
+            .andExpect(jsonPath("$.plans[2].quotaTotal").value(1000))
+            .andExpect(jsonPath("$.plans[2].current").value(true))
             .andExpect(jsonPath("$..tenantApiKey").doesNotExist())
             .andExpect(jsonPath("$..stripeCustomerId").doesNotExist())
+            .andExpect(jsonPath("$..priceId").doesNotExist())
             .andExpect(content().string(not(containsString("tenantApiKey"))))
-            .andExpect(content().string(not(containsString("stripeCustomerId"))));
+            .andExpect(content().string(not(containsString("stripeCustomerId"))))
+            .andExpect(content().string(not(containsString("priceId"))));
     }
 
     @Test
@@ -92,7 +99,7 @@ class DashboardControllerIT {
         Tenant tenant = new Tenant();
         tenant.setCompanyName("Acme Inc");
         tenant.setTenantApiKey("tenant-key-" + System.nanoTime());
-        tenant.setQuotaBalance(8750L);
+        tenant.setQuotaBalance(875L);
         Tenant savedTenant = tenantRepository.save(tenant);
 
         User user = new User();
@@ -105,7 +112,7 @@ class DashboardControllerIT {
         subscription.setTenant(savedTenant);
         subscription.setStripeCustomerId("cus_test_123");
         subscription.setPlanTier("PRO");
-        subscription.setQuotaTotal(10000L);
+        subscription.setQuotaTotal(1000L);
         subscription.setQuotaUsed(999L);
         subscription.setStatus("ACTIVE");
         subscriptionRepository.save(subscription);

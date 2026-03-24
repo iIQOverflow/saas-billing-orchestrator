@@ -1,5 +1,6 @@
 package com.jyf.sbo.service;
 
+import com.jyf.sbo.domain.PlanCode;
 import com.jyf.sbo.domain.Subscription;
 import com.jyf.sbo.domain.Tenant;
 import com.jyf.sbo.domain.User;
@@ -23,6 +24,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class DashboardServiceTest {
 
+    private static final String TEST_PLUS_PRICE_ID = "price_plus_test";
+    private static final String TEST_PRO_PRICE_ID = "price_pro_test";
+
     @Mock
     private UserRepository userRepository;
 
@@ -33,16 +37,34 @@ class DashboardServiceTest {
     private SubscriptionRepository subscriptionRepository;
 
     @Spy
-    private PlanCatalogService planCatalogService;
+    private PlanCatalogService planCatalogService = new PlanCatalogService(TEST_PLUS_PRICE_ID, TEST_PRO_PRICE_ID);
 
     @InjectMocks
     private DashboardService dashboardService;
 
     @Test
+    void getSummaryResolvesCurrentPlanFromEnumBackedMapping() {
+        User user = createUser(100L, 10L, "admin@acme.com");
+        Tenant tenant = createTenant(10L, "Acme Inc", "tenant-key", 875L);
+        Subscription subscription = createSubscription(PlanCode.PRO, "ACTIVE", 1000L, 999L, tenant);
+
+        when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+        when(tenantRepository.findById(10L)).thenReturn(Optional.of(tenant));
+        when(subscriptionRepository.findByTenantId(10L)).thenReturn(Optional.of(subscription));
+
+        DashboardSummaryResponse response = dashboardService.getSummary(100L, 10L);
+
+        assertThat(response.subscription().planCode()).isEqualTo(PlanCode.PRO.name());
+        assertThat(response.plans())
+            .extracting(plan -> plan.planCode() + ":" + plan.current())
+            .containsExactly("FREE:false", "PLUS:false", "PRO:true");
+    }
+
+    @Test
     void getSummaryHandlesZeroTotalQuota() {
         User user = createUser(100L, 10L, "admin@acme.com");
         Tenant tenant = createTenant(10L, "Acme Inc", "tenant-key", 250L);
-        Subscription subscription = createSubscription("FREE", "ACTIVE", 0L, 999L, tenant);
+        Subscription subscription = createSubscription(PlanCode.FREE, "ACTIVE", 0L, 999L, tenant);
 
         when(userRepository.findById(100L)).thenReturn(Optional.of(user));
         when(tenantRepository.findById(10L)).thenReturn(Optional.of(tenant));
@@ -57,7 +79,23 @@ class DashboardServiceTest {
         assertThat(response.subscription().planCode()).isEqualTo("FREE");
         assertThat(response.plans())
             .extracting(plan -> plan.planCode() + ":" + plan.current())
-            .containsExactly("FREE:true", "PRO:false");
+            .containsExactly("FREE:true", "PLUS:false", "PRO:false");
+    }
+
+    @Test
+    void getSummaryRejectsInvalidPersistedPlanTier() {
+        User user = createUser(100L, 10L, "admin@acme.com");
+        Tenant tenant = createTenant(10L, "Acme Inc", "tenant-key", 875L);
+        Subscription subscription = createSubscriptionWithPersistedPlanTier("ENTERPRISE", "ACTIVE", 1000L, 999L, tenant);
+
+        when(userRepository.findById(100L)).thenReturn(Optional.of(user));
+        when(tenantRepository.findById(10L)).thenReturn(Optional.of(tenant));
+        when(subscriptionRepository.findByTenantId(10L)).thenReturn(Optional.of(subscription));
+
+        assertThatThrownBy(() -> dashboardService.getSummary(100L, 10L))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Unknown subscription planTier")
+            .hasMessageContaining("ENTERPRISE");
     }
 
     @Test
@@ -94,11 +132,26 @@ class DashboardServiceTest {
         return tenant;
     }
 
-    private Subscription createSubscription(String planTier,
+    private Subscription createSubscription(PlanCode planCode,
                                             String status,
                                             Long quotaTotal,
                                             Long quotaUsed,
                                             Tenant tenant) {
+        Subscription subscription = new Subscription();
+        subscription.setTenant(tenant);
+        subscription.setStripeCustomerId("cus_123");
+        subscription.setPlanCode(planCode);
+        subscription.setQuotaTotal(quotaTotal);
+        subscription.setQuotaUsed(quotaUsed);
+        subscription.setStatus(status);
+        return subscription;
+    }
+
+    private Subscription createSubscriptionWithPersistedPlanTier(String planTier,
+                                                                 String status,
+                                                                 Long quotaTotal,
+                                                                 Long quotaUsed,
+                                                                 Tenant tenant) {
         Subscription subscription = new Subscription();
         subscription.setTenant(tenant);
         subscription.setStripeCustomerId("cus_123");
