@@ -35,3 +35,5 @@ build/
 .env
 
 /start-db-tunnel.sh
+/note.md
+/docs/
