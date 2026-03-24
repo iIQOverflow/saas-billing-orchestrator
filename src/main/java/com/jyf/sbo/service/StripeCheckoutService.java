@@ -23,6 +23,7 @@ public class StripeCheckoutService {
     }
 
     public CheckoutResponse createCheckoutSession(CheckoutRequest request,
+                                                  String stripePriceId,
                                                   String stripeCustomerId,
                                                   Long tenantId,
                                                   PlanCode planCode) {
@@ -37,7 +38,7 @@ public class StripeCheckoutService {
                 .addLineItem(
                     SessionCreateParams.LineItem.builder()
                         .setQuantity(1L)
-                        .setPrice(request.priceId())
+                        .setPrice(stripePriceId)
                         .build()
                 )
                 .build();

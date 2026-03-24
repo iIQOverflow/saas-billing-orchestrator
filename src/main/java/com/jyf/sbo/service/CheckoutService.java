@@ -1,5 +1,6 @@
 package com.jyf.sbo.service;
 
+import com.jyf.sbo.domain.PlanCode;
 import com.jyf.sbo.domain.Subscription;
 import com.jyf.sbo.domain.User;
 import com.jyf.sbo.dto.CheckoutRequest;
@@ -14,17 +15,25 @@ public class CheckoutService {
 
     private final UserRepository userRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final PlanCatalogService planCatalogService;
     private final StripeCheckoutService stripeCheckoutService;
 
     public CheckoutService(UserRepository userRepository,
                            SubscriptionRepository subscriptionRepository,
+                           PlanCatalogService planCatalogService,
                            StripeCheckoutService stripeCheckoutService) {
         this.userRepository = userRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.planCatalogService = planCatalogService;
         this.stripeCheckoutService = stripeCheckoutService;
     }
 
     public CheckoutResponse createCheckoutSession(Long userId, Long tenantId, CheckoutRequest request) {
+        PlanCode requestedPlanCode = PlanCode.fromRequest(request.planCode());
+        if (requestedPlanCode == PlanCode.FREE) {
+            throw new IllegalArgumentException("FREE plan does not use Stripe checkout");
+        }
+
         validateUrl(request.successUrl(), "successUrl");
         validateUrl(request.cancelUrl(), "cancelUrl");
 
@@ -38,11 +47,14 @@ public class CheckoutService {
         Subscription subscription = subscriptionRepository.findByTenantId(tenantId)
             .orElseThrow(() -> new IllegalArgumentException("Subscription not found for tenant"));
 
+        String stripePriceId = planCatalogService.getRequiredStripePriceId(requestedPlanCode);
+
         return stripeCheckoutService.createCheckoutSession(
             request,
+            stripePriceId,
             subscription.getStripeCustomerId(),
             tenantId,
-            subscription.getPlanCode()
+            requestedPlanCode
         );
     }
 

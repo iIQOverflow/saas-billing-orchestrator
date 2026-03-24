@@ -3,8 +3,8 @@ package com.jyf.sbo.dto;
 import jakarta.validation.constraints.NotBlank;
 
 public record CheckoutRequest(
-    @NotBlank(message = "priceId is required")
-    String priceId,
+    @NotBlank(message = "planCode is required")
+    String planCode,
 
     @NotBlank(message = "successUrl is required")
     String successUrl,

@@ -35,6 +35,11 @@ public class PlanCatalogService {
         return Optional.ofNullable(getPlanDefinition(planCode).stripePriceId());
     }
 
+    public String getRequiredStripePriceId(PlanCode planCode) {
+        return findStripePriceId(planCode)
+            .orElseThrow(() -> new IllegalStateException("Stripe priceId is not configured for planCode=" + planCode));
+    }
+
     private static Map<PlanCode, PlanDefinition> createPlanDefinitions(String plusPriceId, String proPriceId) {
         EnumMap<PlanCode, PlanDefinition> definitions = new EnumMap<>(PlanCode.class);
         definitions.put(PlanCode.FREE, new PlanDefinition(PlanCode.FREE, "Free", "$0", 10L, null));
