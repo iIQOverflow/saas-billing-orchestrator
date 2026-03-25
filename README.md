@@ -57,7 +57,7 @@ set APP_JWT_SECRET=replace-with-at-least-32-characters
 mvn spring-boot:run
 ```
 
-Flyway auto-runs migration from `src/main/resources/db/migration/V1__baseline_schema.sql` on startup.
+Flyway auto-runs migrations from `src/main/resources/db/migration/` on startup.
 
 ## Seed Data (Dev)
 
@@ -67,7 +67,7 @@ Use SQL to create a tenant/user/subscription for local testing:
 INSERT INTO tenants(company_name, tenant_api_key, quota_balance, create_time, update_time)
 VALUES ('Acme Inc', 'acme_prod_demo_key', 10000, now(), now());
 
-INSERT INTO subscriptions(tenant_id, stripe_customer_id, plan_tier, quota_total, quota_used, status, create_time, update_time)
+INSERT INTO subscriptions(tenant_id, stripe_customer_id, plan_code, quota_total, quota_used, status, create_time, update_time)
 VALUES (
   (SELECT id FROM tenants WHERE tenant_api_key = 'acme_prod_demo_key'),
   'cus_test_acme_001',
@@ -151,4 +151,3 @@ mvn test
 - Do not commit real Stripe keys.
 - `.env` is ignored by git; keep only local/dev test values there.
 - Use environment variables or secret manager values in production.
-

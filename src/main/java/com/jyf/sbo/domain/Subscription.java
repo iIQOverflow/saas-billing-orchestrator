@@ -18,7 +18,7 @@ public class Subscription extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String stripeCustomerId;
 
-    @Column(nullable = false)
+    @Column(name = "plan_code", nullable = false)
     private String planTier;
 
     @Column(nullable = false)
