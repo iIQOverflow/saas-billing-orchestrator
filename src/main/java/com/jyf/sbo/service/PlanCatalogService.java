@@ -40,6 +40,10 @@ public class PlanCatalogService {
             .orElseThrow(() -> new IllegalStateException("Stripe priceId is not configured for planCode=" + planCode));
     }
 
+    public long getQuotaTotal(PlanCode planCode) {
+        return getPlanDefinition(planCode).quotaTotal();
+    }
+
     private static Map<PlanCode, PlanDefinition> createPlanDefinitions(String plusPriceId, String proPriceId) {
         EnumMap<PlanCode, PlanDefinition> definitions = new EnumMap<>(PlanCode.class);
         definitions.put(PlanCode.FREE, new PlanDefinition(PlanCode.FREE, "Free", "$0", 10L, null));

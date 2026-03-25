@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class StripeCheckoutService {
 
     private static final Logger log = LoggerFactory.getLogger(StripeCheckoutService.class);
+    private static final String PLAN_CODE_METADATA_KEY = "planCode";
 
     private final StripeClient stripeClient;
 
@@ -35,6 +36,11 @@ public class StripeCheckoutService {
                 .setCancelUrl(request.cancelUrl())
                 .putMetadata("tenantId", String.valueOf(tenantId))
                 .putMetadata("planTier", planCode.name())
+                .setSubscriptionData(
+                    SessionCreateParams.SubscriptionData.builder()
+                        .putMetadata(PLAN_CODE_METADATA_KEY, planCode.name())
+                        .build()
+                )
                 .addLineItem(
                     SessionCreateParams.LineItem.builder()
                         .setQuantity(1L)
