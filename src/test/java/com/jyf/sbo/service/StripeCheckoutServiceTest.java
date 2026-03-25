@@ -43,6 +43,14 @@ class StripeCheckoutServiceTest {
         ArgumentCaptor<ApiRequest> requestCaptor = ArgumentCaptor.forClass(ApiRequest.class);
         verify(responseGetter).request(requestCaptor.capture(), any(Type.class));
 
+        Object metadataObject = requestCaptor.getValue().getParams().get("metadata");
+        assertThat(metadataObject).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, String> sessionMetadata = (Map<String, String>) metadataObject;
+        assertThat(sessionMetadata)
+            .containsEntry("tenantId", "10")
+            .doesNotContainKey("planTier");
+
         Object subscriptionData = requestCaptor.getValue().getParams().get("subscription_data");
         assertThat(subscriptionData).isInstanceOf(Map.class);
         @SuppressWarnings("unchecked")

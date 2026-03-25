@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -97,6 +98,37 @@ class StripeWebhookServiceTest {
     }
 
     @Test
+    void handleEventInvoicePaidDuplicateDeliveryWithSameEventIdKeepsCanonicalizedState() {
+        Subscription subscription = createSubscription(PlanCode.PRO, 10L, 7L, 3L);
+        Event firstEvent = createInvoicePaidEvent(
+            "evt_invoice_paid_123",
+            createInvoice("cus_123", Map.of("planCode", "PLUS"))
+        );
+        Event duplicateEvent = createInvoicePaidEvent(
+            "evt_invoice_paid_123",
+            createInvoice("cus_123", Map.of("planCode", "PLUS"))
+        );
+
+        when(subscriptionRepository.findByStripeCustomerId("cus_123")).thenReturn(Optional.of(subscription));
+        when(idempotencyService.acquireLock(firstEvent, subscription)).thenReturn(true);
+        when(idempotencyService.acquireLock(duplicateEvent, subscription)).thenReturn(false);
+
+        assertThat(firstEvent.getId()).isEqualTo(duplicateEvent.getId());
+
+        stripeWebhookService.handleEvent(firstEvent);
+        stripeWebhookService.handleEvent(duplicateEvent);
+
+        assertThat(subscription.getPlanTier()).isEqualTo(PlanCode.PLUS.name());
+        assertThat(subscription.getQuotaTotal()).isEqualTo(100L);
+        assertThat(subscription.getQuotaUsed()).isZero();
+        assertThat(subscription.getStatus()).isEqualTo("ACTIVE");
+        assertThat(subscription.getTenant().getQuotaBalance()).isEqualTo(100L);
+        verify(tenantRepository, times(1)).save(subscription.getTenant());
+        verify(subscriptionRepository, times(1)).save(subscription);
+        verify(redisQuotaService, times(1)).setQuota(subscription.getTenant().getId(), 100L);
+    }
+
+    @Test
     void handleEventInvoicePaidMissingPlanCodeMetadataFailsClearly() {
         Event event = createInvoicePaidEvent(createInvoice("cus_123", Map.of()));
 
@@ -139,6 +171,12 @@ class StripeWebhookServiceTest {
         when(event.getDataObjectDeserializer()).thenReturn(deserializer);
         when(deserializer.getObject()).thenReturn(Optional.of(invoice));
 
+        return event;
+    }
+
+    private Event createInvoicePaidEvent(String eventId, Invoice invoice) {
+        Event event = createInvoicePaidEvent(invoice);
+        when(event.getId()).thenReturn(eventId);
         return event;
     }
 

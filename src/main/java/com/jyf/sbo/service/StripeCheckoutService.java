@@ -35,7 +35,6 @@ public class StripeCheckoutService {
                 .setSuccessUrl(request.successUrl())
                 .setCancelUrl(request.cancelUrl())
                 .putMetadata("tenantId", String.valueOf(tenantId))
-                .putMetadata("planTier", planCode.name())
                 .setSubscriptionData(
                     SessionCreateParams.SubscriptionData.builder()
                         .putMetadata(PLAN_CODE_METADATA_KEY, planCode.name())
