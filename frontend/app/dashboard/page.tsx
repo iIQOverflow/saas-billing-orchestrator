@@ -1,5 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import ConsumeUsageButton from '@/components/dashboard/ConsumeUsageButton';
 import LogoutButton from '@/components/dashboard/LogoutButton';
 import { SESSION_COOKIE } from '@/lib/auth';
 
@@ -111,8 +112,9 @@ export default async function DashboardPage() {
                     <div>
                         <h1 className="text-3xl font-semibold text-slate-900">Dashboard</h1>
                         <p className="mt-2 text-sm text-slate-600">
-                            This dashboard now loads <code>/api/me</code> and{' '}
-                            <code>/api/dashboard/summary</code>.
+                            This dashboard now loads <code>/api/me</code>,{' '}
+                            <code>/api/dashboard/summary</code>, and can trigger{' '}
+                            <code>/api/demo/usage/consume</code>.
                         </p>
                     </div>
 
@@ -200,6 +202,8 @@ export default async function DashboardPage() {
                                             {summaryData.quota.usagePercent}%
                                         </p>
                                     </div>
+
+                                    <ConsumeUsageButton />
                                 </div>
 
                                 <div>
