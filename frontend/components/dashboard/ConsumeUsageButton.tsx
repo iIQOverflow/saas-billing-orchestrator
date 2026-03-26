@@ -67,18 +67,14 @@ export default function ConsumeUsageButton() {
                 type="button"
                 onClick={handleConsume}
                 disabled={isSubmitting}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-                {isSubmitting ? 'Consuming...' : 'Consume 1 unit'}
+                {isSubmitting ? 'Updating...' : 'Use 1 unit'}
             </button>
 
-            <p className="mt-2 text-sm text-slate-500">
-                Each click consumes exactly 1 unit through <code>/api/demo/usage/consume</code>.
-            </p>
+            <p className="mt-2 text-sm text-slate-500">Demo a one-unit usage update.</p>
 
-            {error ? (
-                <p className="mt-2 text-sm text-red-600">{error}</p>
-            ) : null}
+            {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
         </div>
     );
 }

@@ -31,9 +31,9 @@ function extractMessageFromRawText(rawText: string): string {
 }
 
 export default function UpgradePlanButton({
-                                              planCode,
-                                              displayName,
-                                          }: UpgradePlanButtonProps) {
+    planCode,
+    displayName,
+}: UpgradePlanButtonProps) {
     const router = useRouter();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,14 +102,13 @@ export default function UpgradePlanButton({
                 type="button"
                 onClick={handleUpgrade}
                 disabled={isSubmitting}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label={`Upgrade to ${displayName}`}
+                className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-                {isSubmitting ? 'Redirecting...' : `Upgrade to ${displayName}`}
+                {isSubmitting ? 'Redirecting...' : 'Upgrade'}
             </button>
 
-            {error ? (
-                <p className="mt-2 text-sm text-red-600">{error}</p>
-            ) : null}
+            {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
         </div>
     );
 }
