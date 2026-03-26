@@ -5,19 +5,9 @@ export function isProduction() {
 }
 
 export function extractToken(payload: Record<string, unknown>): string | null {
-    const candidates = [
-        payload.token,
-        payload.jwt,
-        payload.accessToken,
-        payload.access_token,
-    ];
-
-    for (const value of candidates) {
-        if (typeof value === 'string' && value.trim().length > 0) {
-            return value;
-        }
+    if (typeof payload.accessToken === 'string' && payload.accessToken.trim().length > 0) {
+        return payload.accessToken;
     }
-
     return null;
 }
 
