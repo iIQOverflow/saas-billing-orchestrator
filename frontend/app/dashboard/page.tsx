@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import ConsumeUsageButton from '@/components/dashboard/ConsumeUsageButton';
 import LogoutButton from '@/components/dashboard/LogoutButton';
+import UpgradePlanButton from '@/components/dashboard/UpgradePlanButton';
 import { SESSION_COOKIE } from '@/lib/auth';
 
 type MeResponse = {
@@ -113,8 +114,9 @@ export default async function DashboardPage() {
                         <h1 className="text-3xl font-semibold text-slate-900">Dashboard</h1>
                         <p className="mt-2 text-sm text-slate-600">
                             This dashboard now loads <code>/api/me</code>,{' '}
-                            <code>/api/dashboard/summary</code>, and can trigger{' '}
-                            <code>/api/demo/usage/consume</code>.
+                            <code>/api/dashboard/summary</code>, can trigger{' '}
+                            <code>/api/demo/usage/consume</code>, and can start Stripe checkout
+                            through <code>/api/checkout/create-session</code>.
                         </p>
                     </div>
 
@@ -231,6 +233,21 @@ export default async function DashboardPage() {
                                                         <p className="mt-1 text-sm text-slate-600">
                                                             Quota total: {plan.quotaTotal}
                                                         </p>
+
+                                                        {plan.current ? (
+                                                            <p className="mt-3 text-sm text-slate-600">
+                                                                This is your current plan.
+                                                            </p>
+                                                        ) : plan.planCode === 'FREE' ? (
+                                                            <p className="mt-3 text-sm text-slate-600">
+                                                                Free plan does not use Stripe checkout.
+                                                            </p>
+                                                        ) : (
+                                                            <UpgradePlanButton
+                                                                planCode={plan.planCode}
+                                                                displayName={plan.displayName}
+                                                            />
+                                                        )}
                                                     </div>
 
                                                     <div className="shrink-0 rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700">

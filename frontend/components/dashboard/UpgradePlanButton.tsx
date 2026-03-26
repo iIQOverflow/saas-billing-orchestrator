@@ -1,0 +1,115 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+type UpgradePlanButtonProps = {
+    planCode: string;
+    displayName: string;
+};
+
+function extractMessageFromRawText(rawText: string): string {
+    if (!rawText) {
+        return 'Could not create checkout session.';
+    }
+
+    try {
+        const payload = JSON.parse(rawText) as Record<string, unknown>;
+
+        if (typeof payload.message === 'string' && payload.message.trim().length > 0) {
+            return payload.message;
+        }
+
+        if (typeof payload.error === 'string' && payload.error.trim().length > 0) {
+            return payload.error;
+        }
+    } catch {
+        // Fall through
+    }
+
+    return rawText;
+}
+
+export default function UpgradePlanButton({
+                                              planCode,
+                                              displayName,
+                                          }: UpgradePlanButtonProps) {
+    const router = useRouter();
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    async function handleUpgrade() {
+        setError('');
+        setIsSubmitting(true);
+
+        try {
+            const origin = window.location.origin;
+
+            const response = await fetch('/api/checkout/create-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    planCode,
+                    successUrl: `${origin}/billing/success`,
+                    cancelUrl: `${origin}/billing/cancel`,
+                }),
+            });
+
+            if (response.status === 401) {
+                router.push('/login');
+                router.refresh();
+                return;
+            }
+
+            const rawText = await response.text();
+
+            if (!response.ok) {
+                setError(extractMessageFromRawText(rawText));
+                return;
+            }
+
+            let payload: { checkoutUrl?: unknown } = {};
+
+            try {
+                payload = JSON.parse(rawText) as { checkoutUrl?: unknown };
+            } catch {
+                setError('Checkout response was not valid JSON.');
+                return;
+            }
+
+            if (
+                typeof payload.checkoutUrl !== 'string' ||
+                payload.checkoutUrl.trim().length === 0
+            ) {
+                setError('Checkout URL was missing from the response.');
+                return;
+            }
+
+            window.location.href = payload.checkoutUrl;
+        } catch {
+            setError('Could not reach the frontend checkout route.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    return (
+        <div className="mt-3">
+            <button
+                type="button"
+                onClick={handleUpgrade}
+                disabled={isSubmitting}
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                {isSubmitting ? 'Redirecting...' : `Upgrade to ${displayName}`}
+            </button>
+
+            {error ? (
+                <p className="mt-2 text-sm text-red-600">{error}</p>
+            ) : null}
+        </div>
+    );
+}
