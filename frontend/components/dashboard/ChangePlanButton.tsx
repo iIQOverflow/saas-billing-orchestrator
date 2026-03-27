@@ -109,7 +109,7 @@ export default function ChangePlanButton({
             </button>
 
             {error ? (
-                <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                <p className="rounded-2xl border border-rose-300/80 bg-rose-50/90 px-3 py-2 text-sm text-rose-800">
                     {error}
                 </p>
             ) : null}

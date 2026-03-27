@@ -34,13 +34,13 @@ body {
   display: block;
   font-size: 0.825rem;
   font-weight: 600;
-  color: #475569;
+  color: #334155;
 }
 
 .login-shell input {
   width: 100%;
   border-radius: 1rem;
-  border-color: #d6dee8;
+  border-color: #c7d2de;
   background: #f8fafc;
   padding: 0.875rem 1rem;
   color: #0f172a;
@@ -52,9 +52,9 @@ body {
 }
 
 .login-shell input:focus {
-  border-color: #94a3b8;
+  border-color: #64748b;
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.16);
+  box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.18);
 }
 
 .login-shell button[type="submit"] {
