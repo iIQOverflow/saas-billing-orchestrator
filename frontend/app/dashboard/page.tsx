@@ -116,21 +116,21 @@ export default async function DashboardPage() {
     const signedInAs = meData?.email ?? 'Unavailable';
 
     return (
-        <main className="min-h-screen bg-slate-100 px-6 py-10">
-            <div className="mx-auto max-w-6xl">
-                <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_42%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-7 sm:px-8">
-                        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                            <div className="max-w-2xl">
+        <main className="min-h-screen bg-slate-100 px-6 py-10 sm:px-8 sm:py-12">
+            <div className="mx-auto max-w-7xl space-y-8">
+                <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_38%),linear-gradient(to_bottom,_#ffffff,_#f8fafc)] px-6 py-8 sm:px-8 sm:py-9">
+                        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                            <div className="max-w-3xl">
                                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700">
                                     Workspace overview
                                 </p>
-                                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-                                    Dashboard
+                                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2rem]">
+                                    Billing operations dashboard
                                 </h1>
-                                <p className="mt-3 text-sm leading-6 text-slate-600">
-                                    See who is signed in, where the subscription stands, and how
-                                    much quota is left for the team.
+                                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                                    Review the active workspace, current subscription, quota usage,
+                                    and available plans in one place.
                                 </p>
                             </div>
 
@@ -139,239 +139,286 @@ export default async function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="mt-6 grid gap-4 md:grid-cols-3">
-                            <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-                                <p className="text-sm text-slate-500">Workspace</p>
-                                <p className="mt-2 text-lg font-semibold text-slate-950">
+                        <dl className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+                                <dt className="text-sm font-medium text-slate-500">Workspace</dt>
+                                <dd className="mt-3 text-lg font-semibold text-slate-950">
                                     {workspaceName}
-                                </p>
-                                <p className="mt-1 text-sm text-slate-600">{signedInAs}</p>
+                                </dd>
+                                <dd className="mt-1 text-sm text-slate-600">Tenant workspace</dd>
                             </div>
 
-                            <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-                                <p className="text-sm text-slate-500">Current plan</p>
-                                <p className="mt-2 text-lg font-semibold text-slate-950">
+                            <div className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+                                <dt className="text-sm font-medium text-slate-500">
+                                    Current user
+                                </dt>
+                                <dd className="mt-3 text-lg font-semibold text-slate-950">
+                                    {signedInAs}
+                                </dd>
+                                <dd className="mt-1 text-sm text-slate-600">
+                                    Active admin session
+                                </dd>
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+                                <dt className="text-sm font-medium text-slate-500">
+                                    Current subscription
+                                </dt>
+                                <dd className="mt-3 text-lg font-semibold text-slate-950">
                                     {currentPlanName}
-                                </p>
-                                <p className="mt-1 text-sm text-slate-600">
-                                    Status: {summaryData?.subscription.status ?? 'Unavailable'}
-                                </p>
+                                </dd>
+                                <dd className="mt-1 text-sm text-slate-600">
+                                    {summaryData?.subscription.status ?? 'Unavailable'}
+                                </dd>
                             </div>
 
-                            <div className="rounded-2xl border border-slate-200 bg-white/80 p-4">
-                                <p className="text-sm text-slate-500">Quota remaining</p>
-                                <p className="mt-2 text-lg font-semibold text-slate-950">
+                            <div className="rounded-2xl border border-slate-200 bg-white/85 p-5">
+                                <dt className="text-sm font-medium text-slate-500">
+                                    Quota usage
+                                </dt>
+                                <dd className="mt-3 text-lg font-semibold text-slate-950">
                                     {summaryData
-                                        ? `${summaryData.quota.remaining} of ${summaryData.quota.total}`
+                                        ? `${summaryData.quota.used} of ${summaryData.quota.total}`
                                         : 'Unavailable'}
-                                </p>
-                                <p className="mt-1 text-sm text-slate-600">
+                                </dd>
+                                <dd className="mt-1 text-sm text-slate-600">
                                     {summaryData
-                                        ? `${summaryData.quota.used} used`
+                                        ? `${summaryData.quota.remaining} remaining`
                                         : 'Usage details unavailable'}
-                                </p>
+                                </dd>
                             </div>
-                        </div>
+                        </dl>
                     </div>
                 </section>
 
-                <div className="mt-8 grid gap-6 xl:grid-cols-2">
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                 <h2 className="text-lg font-semibold text-slate-950">
                                     Current user
                                 </h2>
-                                <p className="mt-1 text-sm text-slate-600">
-                                    Account details for the active session.
+                                <p className="mt-1 text-sm leading-6 text-slate-600">
+                                    Details for the admin account currently signed in.
                                 </p>
                             </div>
                         </div>
 
                         {meError ? (
-                            <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                 {meError}
                             </p>
                         ) : meData ? (
                             <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                    <dt className="text-sm text-slate-500">Email</dt>
-                                    <dd className="mt-2 text-base font-medium text-slate-950">
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                    <dt className="text-sm font-medium text-slate-500">Email</dt>
+                                    <dd className="mt-3 text-base font-medium text-slate-950">
                                         {meData.email}
                                     </dd>
                                 </div>
 
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                    <dt className="text-sm text-slate-500">Company</dt>
-                                    <dd className="mt-2 text-base font-medium text-slate-950">
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                    <dt className="text-sm font-medium text-slate-500">
+                                        Company
+                                    </dt>
+                                    <dd className="mt-3 text-base font-medium text-slate-950">
                                         {meData.companyName}
                                     </dd>
                                 </div>
                             </dl>
                         ) : (
-                            <p className="mt-4 text-sm text-slate-600">No user data available.</p>
+                            <p className="mt-5 text-sm text-slate-600">No user data available.</p>
                         )}
                     </section>
 
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
                         <div>
                             <h2 className="text-lg font-semibold text-slate-950">
                                 Current subscription
                             </h2>
-                            <p className="mt-1 text-sm text-slate-600">
-                                Your plan and billing status at a glance.
+                            <p className="mt-1 text-sm leading-6 text-slate-600">
+                                The active plan, status, and pricing for this workspace.
                             </p>
                         </div>
 
                         {summaryError ? (
-                            <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                 {summaryError}
                             </p>
                         ) : summaryData ? (
-                            <div className="mt-6 space-y-4">
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                        <div>
-                                            <p className="text-sm text-slate-500">Plan</p>
-                                            <p className="mt-2 text-xl font-semibold text-slate-950">
-                                                {currentPlanName}
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                                            {summaryData.subscription.status}
-                                        </div>
+                            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+                                <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-500">
+                                            Current plan
+                                        </p>
+                                        <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+                                            {currentPlanName}
+                                        </p>
                                     </div>
 
-                                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                                        <div>
-                                            <p className="text-sm text-slate-500">Plan code</p>
-                                            <p className="mt-2 text-base font-medium text-slate-950">
-                                                {summaryData.subscription.planCode}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-sm text-slate-500">Monthly price</p>
-                                            <p className="mt-2 text-base font-medium text-slate-950">
-                                                {currentPlan?.monthlyPriceLabel ?? 'Unavailable'}
-                                            </p>
-                                        </div>
+                                    <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                                        {summaryData.subscription.status}
                                     </div>
                                 </div>
+
+                                <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+                                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                        <dt className="text-sm font-medium text-slate-500">
+                                            Plan code
+                                        </dt>
+                                        <dd className="mt-2 text-base font-medium text-slate-950">
+                                            {summaryData.subscription.planCode}
+                                        </dd>
+                                    </div>
+
+                                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                        <dt className="text-sm font-medium text-slate-500">
+                                            Monthly price
+                                        </dt>
+                                        <dd className="mt-2 text-base font-medium text-slate-950">
+                                            {currentPlan?.monthlyPriceLabel ?? 'Unavailable'}
+                                        </dd>
+                                    </div>
+                                </dl>
                             </div>
                         ) : (
-                            <p className="mt-4 text-sm text-slate-600">
+                            <p className="mt-5 text-sm text-slate-600">
                                 No dashboard summary available.
                             </p>
                         )}
                     </section>
 
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
-                        <div>
-                            <h2 className="text-lg font-semibold text-slate-950">Quota usage</h2>
-                            <p className="mt-1 text-sm text-slate-600">
-                                Track how much usage is left before the next limit is reached.
-                            </p>
+                    <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7 xl:col-span-2">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="max-w-2xl">
+                                <h2 className="text-lg font-semibold text-slate-950">
+                                    Quota usage
+                                </h2>
+                                <p className="mt-1 text-sm leading-6 text-slate-600">
+                                    Monitor current usage and demo quota changes without leaving the
+                                    dashboard.
+                                </p>
+                            </div>
                         </div>
 
                         {summaryError ? (
-                            <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                 {summaryError}
                             </p>
                         ) : summaryData ? (
-                            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
-                                <div>
+                            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
+                                <div className="space-y-5">
                                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                            <p className="text-sm text-slate-500">Total quota</p>
-                                            <p className="mt-2 text-2xl font-semibold text-slate-950">
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                            <p className="text-sm font-medium text-slate-500">
+                                                Total quota
+                                            </p>
+                                            <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
                                                 {summaryData.quota.total}
                                             </p>
                                         </div>
 
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                            <p className="text-sm text-slate-500">Used</p>
-                                            <p className="mt-2 text-2xl font-semibold text-slate-950">
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                            <p className="text-sm font-medium text-slate-500">
+                                                Used
+                                            </p>
+                                            <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
                                                 {summaryData.quota.used}
                                             </p>
                                         </div>
 
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                            <p className="text-sm text-slate-500">Remaining</p>
-                                            <p className="mt-2 text-2xl font-semibold text-slate-950">
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                            <p className="text-sm font-medium text-slate-500">
+                                                Remaining
+                                            </p>
+                                            <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
                                                 {summaryData.quota.remaining}
                                             </p>
                                         </div>
 
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                            <p className="text-sm text-slate-500">Usage</p>
-                                            <p className="mt-2 text-2xl font-semibold text-slate-950">
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                            <p className="text-sm font-medium text-slate-500">
+                                                Usage
+                                            </p>
+                                            <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
                                                 {summaryData.quota.usagePercent}%
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <p className="text-sm font-medium text-slate-900">
-                                                Capacity used
-                                            </p>
-                                            <p className="text-sm text-slate-600">
-                                                {summaryData.quota.used} of {summaryData.quota.total}
+                                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-900">
+                                                    Capacity used
+                                                </p>
+                                                <p className="mt-1 text-sm text-slate-600">
+                                                    {summaryData.quota.used} used and{' '}
+                                                    {summaryData.quota.remaining} remaining
+                                                </p>
+                                            </div>
+
+                                            <p className="text-sm font-medium text-slate-700">
+                                                {usagePercent}% of total quota
                                             </p>
                                         </div>
 
-                                        <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+                                        <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
                                             <div
-                                                className="h-full rounded-full bg-slate-900 transition-[width]"
+                                                className="h-full rounded-full bg-slate-900"
                                                 style={{ width: `${usagePercent}%` }}
                                             />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                    <p className="text-sm font-semibold text-slate-950">
-                                        Demo quota update
+                                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+                                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                        Demo action
                                     </p>
-                                    <p className="mt-2 text-sm text-slate-600">
-                                        Use one unit and refresh the totals instantly.
+                                    <h3 className="mt-3 text-xl font-semibold text-slate-950">
+                                        Consume usage
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                                        Use this control during the walkthrough to refresh quota
+                                        totals from the current backend state.
                                     </p>
 
                                     <ConsumeUsageButton />
                                 </div>
                             </div>
                         ) : (
-                            <p className="mt-4 text-sm text-slate-600">
+                            <p className="mt-5 text-sm text-slate-600">
                                 No dashboard summary available.
                             </p>
                         )}
                     </section>
 
-                    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm xl:col-span-2">
-                        <div>
+                    <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7 xl:col-span-2">
+                        <div className="max-w-2xl">
                             <h2 className="text-lg font-semibold text-slate-950">
                                 Available plans
                             </h2>
-                            <p className="mt-1 text-sm text-slate-600">
-                                Compare your current plan with the other options.
+                            <p className="mt-1 text-sm leading-6 text-slate-600">
+                                Review the current subscription and compare the remaining plan
+                                options for this workspace.
                             </p>
                         </div>
 
                         {summaryError ? (
-                            <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                 {summaryError}
                             </p>
                         ) : summaryData ? (
-                            <div className="mt-6 space-y-4">
-                                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5">
-                                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div className="mt-6 space-y-5">
+                                <div className="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5 sm:p-6">
+                                    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                                         <div>
-                                            <p className="text-sm font-semibold text-emerald-700">
-                                                Current plan
+                                            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                                                Current subscription
                                             </p>
-                                            <h3 className="mt-2 text-xl font-semibold text-slate-950">
+                                            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
                                                 {currentPlanName}
                                             </h3>
                                             <p className="mt-2 text-sm text-slate-600">
@@ -379,23 +426,25 @@ export default async function DashboardPage() {
                                             </p>
                                         </div>
 
-                                        <div className="grid gap-3 sm:grid-cols-2">
+                                        <dl className="grid gap-4 sm:grid-cols-2">
                                             <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
-                                                <p className="text-sm text-slate-500">Status</p>
-                                                <p className="mt-2 text-base font-medium text-slate-950">
+                                                <dt className="text-sm font-medium text-slate-500">
+                                                    Status
+                                                </dt>
+                                                <dd className="mt-2 text-base font-medium text-slate-950">
                                                     {summaryData.subscription.status}
-                                                </p>
+                                                </dd>
                                             </div>
 
                                             <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4">
-                                                <p className="text-sm text-slate-500">
+                                                <dt className="text-sm font-medium text-slate-500">
                                                     Included quota
-                                                </p>
-                                                <p className="mt-2 text-base font-medium text-slate-950">
+                                                </dt>
+                                                <dd className="mt-2 text-base font-medium text-slate-950">
                                                     {currentPlan?.quotaTotal ?? summaryData.quota.total}
-                                                </p>
+                                                </dd>
                                             </div>
-                                        </div>
+                                        </dl>
                                     </div>
                                 </div>
 
@@ -404,7 +453,7 @@ export default async function DashboardPage() {
                                         {availablePlans.map((plan) => (
                                             <li
                                                 key={plan.planCode}
-                                                className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                                                className="flex h-full flex-col rounded-3xl border border-slate-200 bg-slate-50 p-5"
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div>
@@ -416,33 +465,39 @@ export default async function DashboardPage() {
                                                         </p>
                                                     </div>
 
-                                                    <div className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                                        Available
+                                                    <div className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                                                        Change plan
                                                     </div>
                                                 </div>
 
-                                                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                                                <dl className="mt-6 grid gap-4 sm:grid-cols-2">
                                                     <div>
-                                                        <p className="text-sm text-slate-500">
+                                                        <dt className="text-sm font-medium text-slate-500">
                                                             Monthly price
-                                                        </p>
-                                                        <p className="mt-2 text-2xl font-semibold text-slate-950">
+                                                        </dt>
+                                                        <dd className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
                                                             {plan.monthlyPriceLabel}
-                                                        </p>
+                                                        </dd>
                                                     </div>
 
                                                     <div>
-                                                        <p className="text-sm text-slate-500">
+                                                        <dt className="text-sm font-medium text-slate-500">
                                                             Included quota
-                                                        </p>
-                                                        <p className="mt-2 text-2xl font-semibold text-slate-950">
+                                                        </dt>
+                                                        <dd className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
                                                             {plan.quotaTotal}
-                                                        </p>
-                                                        <p className="text-sm text-slate-500">
+                                                        </dd>
+                                                        <dd className="text-sm text-slate-500">
                                                             units
-                                                        </p>
+                                                        </dd>
                                                     </div>
-                                                </div>
+                                                </dl>
+
+                                                <p className="mt-5 text-sm leading-6 text-slate-600">
+                                                    {plan.planCode === 'FREE'
+                                                        ? 'Return to the included plan without starting a paid checkout flow.'
+                                                        : 'Start checkout to change this workspace to the selected paid plan.'}
+                                                </p>
 
                                                 <div className="mt-auto pt-5">
                                                     {plan.planCode === 'FREE' ? (
@@ -466,7 +521,7 @@ export default async function DashboardPage() {
                                 )}
                             </div>
                         ) : (
-                            <p className="mt-4 text-sm text-slate-600">
+                            <p className="mt-5 text-sm text-slate-600">
                                 No dashboard summary available.
                             </p>
                         )}
