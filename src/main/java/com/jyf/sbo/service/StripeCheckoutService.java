@@ -34,6 +34,7 @@ public class StripeCheckoutService {
                 .setCustomer(stripeCustomerId)
                 .setSuccessUrl(request.successUrl())
                 .setCancelUrl(request.cancelUrl())
+                .setLocale(SessionCreateParams.Locale.EN)
                 .putMetadata("tenantId", String.valueOf(tenantId))
                 .setSubscriptionData(
                     SessionCreateParams.SubscriptionData.builder()

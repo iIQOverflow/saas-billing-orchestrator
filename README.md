@@ -1,67 +1,221 @@
-# Multi-Tenant SaaS Billing Orchestrator
+# SaaS Billing Orchestrator
 
-Production-focused Spring Boot backend for multi-tenant SaaS billing, Stripe-based subscription fulfillment, and Redis-backed API quota enforcement.
+**Production-minded multi-tenant billing system with a substantial Spring Boot backend and a thin Next.js frontend MVP in the same repository.**
 
-## Implemented Architecture
+## Live demo
 
-- Tenant-scoped data model (`tenants`, `users`, `subscriptions`, `payment_events`)
-- Flyway-managed schema migrations (no runtime schema mutation in dev/prod)
-- JWT auth for human endpoints (`/api/auth/**`, `/api/checkout/**`)
-- API-key interceptor for machine endpoints (`/api/v1/**`)
-- Redis atomic quota decrement via Lua script
-- Idempotent Stripe webhook processing (`invoice.paid`) using DB unique constraint
-- Scheduled Redis -> PostgreSQL quota reconciliation
+**Demo URL:** [https://AWS-DEPLOYED-FRONTEND-URL](https://AWS-DEPLOYED-FRONTEND-URL)
 
-## Tech Stack
+![Demo flow GIF](resources/demo/demo-flow.gif)
 
-- Java 17
-- Spring Boot 3.5
-- Spring Data JPA + PostgreSQL
-- Spring Security + JWT (jjwt)
-- Redis (Spring Data Redis)
-- Flyway
-- Stripe Java SDK
+---
 
-## Prerequisites
+## Project summary
 
-- Java 17+
-- Maven 3.9+
-- Docker Desktop
-- Stripe test account keys
+**SaaS Billing Orchestrator** is a backend-centered billing system with a thin frontend MVP for demo and interview use.
 
-## Local Setup
+The backend is the core of the project. It owns contracts, billing rules, subscription fulfillment, quota behavior, and browser-safe product flows. The frontend under `/frontend` is intentionally thin and backend-driven: it exists to demonstrate real user flows such as login, dashboard-driven quota visibility, usage consumption, and paid plan change through Stripe checkout.
 
-1. Start dependencies:
+A key hardening step in the project was introducing **canonical `PlanCode`-based fulfillment**. The browser sends `planCode`, the backend resolves Stripe `priceId` privately, checkout stores the purchased `planCode` in Stripe subscription metadata, and `invoice.paid` fulfillment updates persisted subscription and quota state from that canonical plan identity. This fixed a real drift bug where persisted plan identity and quota totals could diverge.
+
+---
+
+## What is implemented
+
+Current implemented browser-safe product flow:
+
+1. login
+2. dashboard loads backend-driven data
+3. usage consumption works from the UI
+4. quota refresh works
+5. plan-change / checkout redirect works
+6. Stripe success/cancel return works
+7. dashboard reflects refreshed backend state after return
+
+Browser-safe backend endpoints implemented for the frontend MVP:
+
+- `POST /api/auth/login`
+- `GET /api/me`
+- `GET /api/dashboard/summary`
+- `POST /api/demo/usage/consume`
+- `POST /api/checkout/create-session`
+
+Current frontend MVP status:
+
+- implemented under `/frontend`
+- thin and backend-driven
+- Next.js + TypeScript + App Router + plain `fetch`
+- no Redux / React Query / Axios
+
+---
+
+## Architecture at a glance
+
+The project uses a thin frontend and a backend-centered architecture.
+
+### Backend
+
+- Spring Boot backend remains the source of truth for contracts and business behavior
+- PostgreSQL stores tenant, subscription, and billing state
+- Redis supports quota-related backend behavior
+- Stripe handles paid checkout and subscription fulfillment
+- JWT secures browser-safe authenticated flows
+
+### Frontend (`/frontend`)
+
+- Next.js
+- TypeScript
+- App Router
+- plain `fetch`
+- minimal proxy/BFF-style layer for browser-safe backend calls
+- JWT handled through HttpOnly cookie flow, not `localStorage` or `sessionStorage`
+
+### Boundary design
+
+- browser uses only browser-safe endpoints
+- browser does **not** use `/api/v1/**`
+- browser-safe responses do **not** expose:
+  - `tenantApiKey`
+  - `stripeCustomerId`
+  - Stripe `priceId`
+  - machine-facing secrets
+
+---
+
+## Key engineering decisions
+
+### 1. Added browser-safe endpoints instead of reusing machine-facing APIs
+
+The frontend uses product-shaped endpoints such as `/api/me` and `/api/dashboard/summary` rather than consuming `/api/v1/**`. This keeps browser contracts safer and avoids leaking machine-facing identifiers into the UI.
+
+### 2. Made `PlanCode` the canonical application plan identity
+
+The application plan model is:
+
+- `FREE`
+- `PLUS`
+- `PRO`
+
+This separates business plan identity from Stripe-specific commercial identifiers.
+
+### 3. Browser sends `planCode`, not Stripe `priceId`
+
+Checkout validates `planCode` strictly, rejects `FREE` for Stripe checkout, and resolves Stripe `priceId` privately on the backend.
+
+### 4. Canonicalized fulfillment from `PlanCode`
+
+Checkout writes the purchased `planCode` into Stripe subscription metadata. `invoice.paid` reads that metadata back and updates persisted subscription and quota state canonically. This fixed the drift bug where plan identity and quota totals could diverge.
+
+### 5. Cleaned up persisted naming from `plan_tier` to `plan_code`
+
+The persistence model was aligned through Flyway. Persistence remains string-backed for now.
+
+---
+
+## Demo flow
+
+Recommended reviewer / interviewer flow:
+
+1. **Log in** through the frontend using the browser-safe authentication flow.
+2. **Load the dashboard** and verify that subscription and quota data come from the backend.
+3. **Consume usage** from the UI to exercise the browser-safe usage path.
+4. **Refresh quota** and confirm updated backend state is reflected in the dashboard.
+5. **Start a paid plan change** from the dashboard. The browser sends `planCode`; the backend handles Stripe mapping privately.
+6. **Return from Stripe** through either the success or cancel path.
+7. **Verify refreshed state** after return on the dashboard.
+
+The point of the demo is not frontend complexity. It is that the frontend is thin while the backend owns billing logic, fulfillment behavior, and browser-safe product contracts.
+
+---
+
+## Repository structure
+
+```text
+.
+├── frontend/                    # Next.js frontend MVP
+├── src/main/java/...           # Spring Boot backend source
+├── src/main/resources/         # application config + Flyway migrations
+├── docker-compose.yml          # local PostgreSQL / Redis
+└── pom.xml                     # backend build
+```
+
+
+The frontend and backend live in the same repository, but the backend remains the source of truth for contracts and business behavior.
+
+---
+
+## Local run instructions
+
+### Prerequisites
+
+* Java 17+
+* Maven 3.9+
+* Node.js 18+
+* Docker Desktop
+* Stripe test keys for checkout testing
+
+### 1. Start local infrastructure
+
+From the repository root:
 
 ```bash
 docker-compose up -d
 ```
 
-2. Export environment variables:
+This starts local PostgreSQL and Redis.
+
+### 2. Configure backend environment
+
+#### Environment variables
 
 ```bash
-set SPRING_PROFILES_ACTIVE=dev
-set BILLING_DB_URL=jdbc:postgresql://localhost:5432/sbo_dev
-set BILLING_DB_USERNAME=sbo_admin
-set BILLING_DB_PASS=password
-set REDIS_HOST=localhost
-set REDIS_PORT=6379
-set STRIPE_SECRET_KEY=sk_test_xxx
-set STRIPE_WEBHOOK_SECRET=whsec_xxx
-set APP_JWT_SECRET=replace-with-at-least-32-characters
+# --- Spring Boot Profile ---
+SPRING_PROFILES_ACTIVE=dev
+# --- JWT ---
+APP_JWT_SECRET=replace-with-at-least-32-characters
+APP_JWT_EXPIRATION_SECONDS=3600
+# --- PostgreSQL ---
+BILLING_DB_URL=jdbc:postgresql://localhost:5432/sbo_dev
+BILLING_DB_USERNAME=sbo_admin
+BILLING_DB_PASS=password
+# --- Redis ---
+REDIS_HOST=localhost
+REDIS_PORT=6379
+QUOTA_RECONCILIATION_DELAY_MS=300000
+# --- Stripe ---
+# 1. The Frontend Tokenizer (Starts with pk_test_)
+STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+# 2. The God Key: Outbound Authority (Starts with sk_test_)
+STRIPE_SECRET_KEY=sk_test_xxx
+# 3. The Webhook Lock: Inbound Verification (Starts with whsec_)
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+# 4. The Price Id (Starts with price_)
+STRIPE_PRICE_ID_PLUS=price_xxx
+STRIPE_PRICE_ID_PRO=price_xxx
 ```
 
-3. Run app:
+#### Stripe configuration (Sandbox)
+1. Create a test customer in Stripe.
+2. Create two products/prices in Stripe for:
+  - Plus
+  - Pro
+3. Copy the resulting Stripe price IDs into:
+  - `STRIPE_PRICE_ID_PLUS`
+  - `STRIPE_PRICE_ID_PRO`
+
+### 3. Run the backend
+
+From the repository root:
 
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 Flyway auto-runs migrations from `src/main/resources/db/migration/` on startup.
 
-## Seed Data (Dev)
+### 4. Seed local dev data
 
-Use SQL to create a tenant/user/subscription for local testing:
+Use SQL to create a tenant, user, and subscription for local testing:
 
 ```sql
 INSERT INTO tenants(company_name, tenant_api_key, quota_balance, create_time, update_time)
@@ -79,7 +233,7 @@ VALUES (
   now()
 );
 
--- Generate BCrypt hash locally (example password: P@ssw0rd!)
+-- Generate a BCrypt hash locally and replace the placeholder before inserting the user row.
 INSERT INTO users(tenant_id, email, password_hash, create_time, update_time)
 VALUES (
   (SELECT id FROM tenants WHERE tenant_api_key = 'acme_prod_demo_key'),
@@ -90,64 +244,87 @@ VALUES (
 );
 ```
 
-## API Quick Checks
+### 5. Run the frontend
 
-### 1) Login (`/api/auth/login`)
-
-```bash
-curl -X POST http://localhost:8080/api/auth/login ^
-  -H "Content-Type: application/json" ^
-  -d "{\"email\":\"admin@acme.com\",\"password\":\"P@ssw0rd!\"}"
-```
-
-### 2) Create Checkout Session (`/api/checkout/create-session`)
+From the `/frontend` directory:
 
 ```bash
-curl -X POST http://localhost:8080/api/checkout/create-session ^
-  -H "Authorization: Bearer <JWT_TOKEN>" ^
-  -H "Content-Type: application/json" ^
-  -d "{\"priceId\":\"price_xxx\",\"successUrl\":\"https://example.com/success\",\"cancelUrl\":\"https://example.com/cancel\"}"
+npm install
+npm run dev
 ```
 
-### 3) M2M API (`/api/v1/process-data`)
+### 6. Open the app
 
-```bash
-curl -X POST http://localhost:8080/api/v1/process-data ^
-  -H "Authorization: Bearer acme_prod_demo_key" ^
-  -H "Content-Type: application/json" ^
-  -d "{\"action\":\"analyze\",\"dataPayload\":{\"text\":\"hello\"}}"
-```
+Open the frontend URL shown by Next.js in your browser and follow the core demo flow:
 
-## Stripe Webhook Test
+1. log in
+2. load the dashboard
+3. consume usage
+4. refresh quota
+5. start checkout
+6. return from Stripe success/cancel flow
 
-1. Start Stripe CLI forwarding:
+### 7. Optional Stripe webhook testing
+
+Start Stripe CLI forwarding:
 
 ```bash
 stripe listen --forward-to localhost:8080/api/webhooks/stripe
 ```
 
-2. Copy generated webhook secret into `STRIPE_WEBHOOK_SECRET`.
-
-3. Trigger test event:
+Copy the generated webhook secret into `STRIPE_WEBHOOK_SECRET`, then trigger a test event:
 
 ```bash
 stripe trigger invoice.paid
 ```
 
-The webhook is idempotent by `payment_events.stripe_event_id` unique constraint.
+---
 
-## Testing
+## Current scope and boundaries
 
-Run tests:
+This project is intentionally strong in backend behavior and intentionally thin in frontend architecture.
 
-```bash
-mvn test
-```
+Current scope:
 
-`application-test.properties` uses in-memory H2 and disables scheduling to keep tests deterministic.
+* substantial, production-minded backend
+* thin frontend MVP accepted for interview/demo use
+* dashboard-centered product flow
+* simple success/cancel return pages
 
-## Notes on Secrets 
+Current boundaries:
 
-- Do not commit real Stripe keys.
-- `.env` is ignored by git; keep only local/dev test values there.
-- Use environment variables or secret manager values in production.
+* backend remains the source of truth
+* browser uses only browser-safe APIs
+* `/api/v1/**` remains machine-facing
+* browser-safe responses do not expose machine-facing values
+* `plan_code` persistence remains string-backed for now
+
+The current priority is packaging, demo clarity, and interview readiness rather than expanding project scope.
+
+---
+
+## Trade-offs and deferred work
+
+* The frontend is intentionally thin and backend-driven; it is not designed as a frontend-heavy architecture exercise.
+* Browser-safe APIs remain separate from machine-facing `/api/v1/**`.
+* `subscriptions.plan_code` remains string-backed for now; direct JPA enum mapping is deferred.
+* Success/cancel pages are intentionally simple.
+* Broader billing policy changes, frontend architecture expansion, and new library adoption are explicitly deferred until after packaging and demo readiness.
+
+---
+
+## Screenshots
+
+![Login page](resources/screenshots/login-page.png)
+
+![Dashboard Main](resources/screenshots/dashboard-main.png)
+
+![Dashboard Quota](resources/screenshots/dashboard-quota.png)
+
+![Dashboard Change Plan](resources/screenshots/dashboard-change-plan.png)
+
+![Stripe Checkout](resources/screenshots/stripe-checkout.png)
+
+![Checkout Success](resources/screenshots/checkout-success.png)
+
+![Checkout Cancel](resources/screenshots/checkout-cancel.png)
