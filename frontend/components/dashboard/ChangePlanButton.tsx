@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-type UpgradePlanButtonProps = {
+type ChangePlanButtonProps = {
     planCode: string;
     displayName: string;
 };
@@ -30,10 +30,10 @@ function extractMessageFromRawText(rawText: string): string {
     return rawText;
 }
 
-export default function UpgradePlanButton({
+export default function ChangePlanButton({
     planCode,
     displayName,
-}: UpgradePlanButtonProps) {
+}: ChangePlanButtonProps) {
     const router = useRouter();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,10 +102,10 @@ export default function UpgradePlanButton({
                 type="button"
                 onClick={handleUpgrade}
                 disabled={isSubmitting}
-                aria-label={`Upgrade to ${displayName}`}
+                aria-label={`Change to ${displayName}`}
                 className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-                {isSubmitting ? 'Redirecting...' : 'Upgrade'}
+                {isSubmitting ? 'Redirecting...' : `Change to ${displayName}`}
             </button>
 
             {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}

@@ -2,7 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import ConsumeUsageButton from '@/components/dashboard/ConsumeUsageButton';
 import LogoutButton from '@/components/dashboard/LogoutButton';
-import UpgradePlanButton from '@/components/dashboard/UpgradePlanButton';
+import ChangePlanButton from '@/components/dashboard/ChangePlanButton';
 import { SESSION_COOKIE } from '@/lib/auth';
 
 type MeResponse = {
@@ -450,7 +450,7 @@ export default async function DashboardPage() {
                                                             Included plan. No checkout required.
                                                         </p>
                                                     ) : (
-                                                        <UpgradePlanButton
+                                                        <ChangePlanButton
                                                             planCode={plan.planCode}
                                                             displayName={plan.displayName}
                                                         />
