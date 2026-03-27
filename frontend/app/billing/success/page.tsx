@@ -29,25 +29,28 @@ export default function BillingSuccessPage() {
     }
 
     return (
-        <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.08),_transparent_30%),linear-gradient(to_bottom,_#f4f7fb,_#eef6f1_42%,_#f8fafc)] px-6 py-16 sm:px-8 sm:py-24">
-            <div className="mx-auto flex max-w-md items-center justify-center">
-                <section className="w-full rounded-[30px] border border-slate-200/80 bg-white/95 px-6 py-8 text-center shadow-[0_24px_70px_-46px_rgba(15,23,42,0.42)] sm:px-8 sm:py-10">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                        Billing update
+        <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.1),_transparent_32%),linear-gradient(to_bottom,_#f6f8fb,_#eef6f1_46%,_#f7faf8)] px-6 py-16 sm:px-8 sm:py-24">
+            <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center">
+                <section className="w-full overflow-hidden rounded-[32px] border border-white/80 bg-white/94 px-6 py-8 text-center shadow-[0_30px_80px_-48px_rgba(15,23,42,0.42)] backdrop-blur sm:px-8 sm:py-9">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 ring-1 ring-emerald-100">
+                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    </div>
+                    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                        Payment submitted
                     </p>
-                    <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                        Update received
+                    <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                        Billing change in progress
                     </h1>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
-                        Your billing change finalizes asynchronously in the background. The
-                        dashboard refreshes when you return.
+                        Your payment was submitted. The billing change finalizes asynchronously in
+                        the background, and the dashboard refreshes when you return.
                     </p>
 
-                    <div className="mt-8 flex flex-col gap-3">
+                    <div className="mt-8 flex flex-col gap-3 border-t border-slate-200/80 pt-6">
                         <button
                             type="button"
                             onClick={goToDashboardNow}
-                            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+                            className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white shadow-[0_20px_36px_-24px_rgba(15,23,42,0.9)] transition hover:-translate-y-0.5 hover:bg-slate-800"
                         >
                             Return to dashboard
                         </button>

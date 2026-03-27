@@ -151,17 +151,18 @@ export default async function DashboardPage() {
     const quotaTotal = summaryData?.quota.total ?? 0;
     const quotaUsed = summaryData?.quota.used ?? 0;
     const quotaRemaining = summaryData?.quota.remaining ?? 0;
+    const currentPlanQuota = currentPlan?.quotaTotal ?? quotaTotal;
 
     const summaryCards = [
         {
             label: 'Workspace',
             value: workspaceName,
-            detail: summaryData ? 'Tenant billing workspace' : 'Workspace unavailable',
+            detail: summaryData ? 'Billing workspace' : 'Workspace unavailable',
         },
         {
             label: 'Signed-in user',
             value: signedInAs,
-            detail: meData ? 'Authenticated admin session' : 'User unavailable',
+            detail: meData ? 'Admin session' : 'User unavailable',
         },
         {
             label: 'Current plan',
@@ -180,38 +181,57 @@ export default async function DashboardPage() {
     const errors = [meError, summaryError].filter(Boolean);
 
     return (
-        <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.08),_transparent_30%),linear-gradient(to_bottom,_#f4f7fb,_#eef3f8_42%,_#f8fafc)] px-6 py-8 sm:px-8 sm:py-10">
-            <div className="mx-auto max-w-[1160px] space-y-6">
-                <section className="rounded-[30px] border border-slate-200/80 bg-white/92 px-6 py-6 shadow-[0_24px_70px_-46px_rgba(15,23,42,0.42)] sm:px-8 sm:py-7">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="max-w-2xl">
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">
-                                Billing workspace
-                            </p>
-                            <h1 className="mt-2 text-[2rem] font-semibold tracking-tight text-slate-950 sm:text-[2.35rem]">
-                                Dashboard
-                            </h1>
-                            <p className="mt-3 text-sm leading-6 text-slate-600">
-                                Track plan state, quota health, and billing actions from one
-                                focused admin surface.
-                            </p>
-                        </div>
-
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center lg:flex-col lg:items-end">
-                            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                    Subscription
+        <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.11),_transparent_32%),linear-gradient(to_bottom,_#f6f8fb,_#edf2f7_44%,_#f7f9fc)] px-5 py-6 sm:px-7 sm:py-8 lg:px-8">
+            <div className="mx-auto max-w-[1120px] space-y-5">
+                <section className="relative overflow-hidden rounded-[34px] border border-white/80 bg-white/92 shadow-[0_34px_90px_-54px_rgba(15,23,42,0.4)] backdrop-blur">
+                    <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.28),_transparent_55%),linear-gradient(180deg,_rgba(248,250,252,0.9),_rgba(255,255,255,0))]" />
+                    <div className="relative px-6 py-6 sm:px-8 sm:py-8">
+                        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                            <div className="max-w-2xl">
+                                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
+                                    Billing workspace
                                 </p>
-                                <div className="mt-2">
+                                <div className="mt-3 flex flex-wrap items-center gap-3">
+                                    <h1 className="text-[2rem] font-semibold tracking-tight text-slate-950 sm:text-[2.45rem]">
+                                        Dashboard
+                                    </h1>
                                     <span
-                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getStatusBadgeClasses(subscriptionStatus)}`}
+                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${getStatusBadgeClasses(subscriptionStatus)}`}
                                     >
                                         {subscriptionStatusLabel}
                                     </span>
                                 </div>
+                                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+                                    Plan state, quota health, and billing actions in one focused
+                                    admin surface.
+                                </p>
                             </div>
 
-                            <LogoutButton />
+                            <div className="flex items-center justify-between gap-3 xl:justify-end">
+                                <div className="rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm text-slate-600 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.8)]">
+                                    Admin session
+                                </div>
+                                <LogoutButton />
+                            </div>
+                        </div>
+
+                        <div className="mt-8 rounded-[28px] border border-slate-200/70 bg-slate-50/80 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+                            <dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                                {summaryCards.map((card) => (
+                                    <div
+                                        key={card.label}
+                                        className="rounded-[22px] bg-white/85 px-4 py-4 shadow-[0_16px_36px_-32px_rgba(15,23,42,0.45)]"
+                                    >
+                                        <dt className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                            {card.label}
+                                        </dt>
+                                        <dd className="mt-3 break-words text-lg font-semibold tracking-tight text-slate-950">
+                                            {card.value}
+                                        </dd>
+                                        <p className="mt-2 text-sm text-slate-600">{card.detail}</p>
+                                    </div>
+                                ))}
+                            </dl>
                         </div>
                     </div>
                 </section>
@@ -229,156 +249,138 @@ export default async function DashboardPage() {
                     </section>
                 ) : null}
 
-                <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {summaryCards.map((card) => (
-                        <article
-                            key={card.label}
-                            className="rounded-[24px] border border-slate-200/80 bg-white/88 px-5 py-4 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.42)]"
-                        >
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                {card.label}
+                <section className="rounded-[34px] border border-white/80 bg-white/94 px-6 py-6 shadow-[0_30px_82px_-52px_rgba(15,23,42,0.38)] sm:px-8 sm:py-8">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div className="max-w-xl">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                                Quota
                             </p>
-                            <p className="mt-3 break-words text-xl font-semibold tracking-tight text-slate-950">
-                                {card.value}
+                            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                                Usage overview
+                            </h2>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                                Current usage, remaining capacity, and the live consume action.
                             </p>
-                            <p className="mt-2 text-sm text-slate-600">{card.detail}</p>
-                        </article>
-                    ))}
-                </section>
-
-                <section className="rounded-[30px] border border-slate-200/80 bg-white px-6 py-6 shadow-[0_24px_70px_-46px_rgba(15,23,42,0.42)] sm:px-8 sm:py-8">
-                    <div className="max-w-2xl">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                            Quota
-                        </p>
-                        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-                            Usage overview
-                        </h2>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                            Review current capacity, remaining headroom, and the live demo action
-                            in one place.
-                        </p>
+                        </div>
                     </div>
 
-                    <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-                        <div className="rounded-[28px] border border-slate-200/80 bg-[linear-gradient(to_bottom_right,_#ffffff,_#f8fafc)] p-5 sm:p-6">
-                            {summaryData ? (
-                                <>
-                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                                        <div>
-                                            <p className="text-sm font-medium text-slate-500">
-                                                Current usage
-                                            </p>
-                                            <div className="mt-3 flex flex-wrap items-end gap-3">
-                                                <p className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-[2.75rem]">
-                                                    {quotaUsed}
-                                                </p>
-                                                <p className="pb-1 text-sm text-slate-500">
-                                                    of {quotaTotal} total units
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600">
-                                            {usagePercent}% used
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-6">
-                                        <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
-                                            <span>Remaining {quotaRemaining}</span>
-                                            <span>Total {quotaTotal}</span>
-                                        </div>
-                                        <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200">
-                                            <div
-                                                className="h-full rounded-full bg-slate-900"
-                                                style={{ width: `${usagePercent}%` }}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-4">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                                Total
-                                            </p>
-                                            <p className="mt-2 text-xl font-semibold text-slate-950">
-                                                {quotaTotal}
-                                            </p>
-                                        </div>
-
-                                        <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-4">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                                Used
-                                            </p>
-                                            <p className="mt-2 text-xl font-semibold text-slate-950">
+                    {summaryData ? (
+                        <div className="mt-7 grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_300px]">
+                            <div className="rounded-[30px] border border-slate-200/70 bg-[linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.94))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-7">
+                                <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-500">
+                                            Current usage
+                                        </p>
+                                        <div className="mt-3 flex flex-wrap items-end gap-3">
+                                            <p className="text-5xl font-semibold tracking-tight text-slate-950 sm:text-[3.5rem]">
                                                 {quotaUsed}
                                             </p>
-                                        </div>
-
-                                        <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-4">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                                Remaining
-                                            </p>
-                                            <p className="mt-2 text-xl font-semibold text-slate-950">
-                                                {quotaRemaining}
+                                            <p className="pb-1 text-sm text-slate-500">
+                                                of {quotaTotal} total units
                                             </p>
                                         </div>
                                     </div>
-                                </>
-                            ) : (
-                                <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm text-slate-600">
-                                    No dashboard summary available.
+
+                                    <div className="inline-flex rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium text-slate-600 shadow-sm">
+                                        {usagePercent}% used
+                                    </div>
                                 </div>
-                            )}
-                        </div>
 
-                        <aside className="rounded-[28px] border border-slate-200/80 bg-slate-50/80 p-5 sm:p-6">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                Live action
-                            </p>
-                            <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
-                                Consume usage
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                                Record a sample usage event and refresh the latest quota totals.
-                            </p>
+                                <div className="mt-8">
+                                    <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
+                                        <span>Remaining {quotaRemaining}</span>
+                                        <span>Total {quotaTotal}</span>
+                                    </div>
+                                    <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200/80">
+                                        <div
+                                            className="h-full rounded-full bg-slate-950"
+                                            style={{ width: `${usagePercent}%` }}
+                                        />
+                                    </div>
+                                </div>
 
-                            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-white px-4 py-4">
-                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                    Current remaining
-                                </p>
-                                <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
-                                    {summaryData ? quotaRemaining : 'Unavailable'}
-                                </p>
+                                <dl className="mt-8 grid gap-3 sm:grid-cols-3">
+                                    <div className="rounded-2xl bg-white px-4 py-4 ring-1 ring-slate-200/70">
+                                        <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                            Used
+                                        </dt>
+                                        <dd className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                                            {quotaUsed}
+                                        </dd>
+                                    </div>
+                                    <div className="rounded-2xl bg-white px-4 py-4 ring-1 ring-slate-200/70">
+                                        <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                            Remaining
+                                        </dt>
+                                        <dd className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                                            {quotaRemaining}
+                                        </dd>
+                                    </div>
+                                    <div className="rounded-2xl bg-white px-4 py-4 ring-1 ring-slate-200/70">
+                                        <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                            Total
+                                        </dt>
+                                        <dd className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                                            {quotaTotal}
+                                        </dd>
+                                    </div>
+                                </dl>
                             </div>
 
-                            <ConsumeUsageButton />
-                        </aside>
-                    </div>
+                            <aside className="rounded-[30px] border border-slate-200/70 bg-slate-50/90 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:p-6">
+                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                    Live action
+                                </p>
+                                <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
+                                    Consume usage
+                                </h3>
+                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                    Record a sample usage event and refresh the latest totals.
+                                </p>
+
+                                <div className="mt-6 rounded-[24px] bg-white px-4 py-4 ring-1 ring-slate-200/70">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                        Current remaining
+                                    </p>
+                                    <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
+                                        {quotaRemaining}
+                                    </p>
+                                </div>
+
+                                <div className="mt-6">
+                                    <ConsumeUsageButton />
+                                </div>
+                            </aside>
+                        </div>
+                    ) : (
+                        <p className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm text-slate-600">
+                            No dashboard summary available.
+                        </p>
+                    )}
                 </section>
 
-                <section className="rounded-[30px] border border-slate-200/80 bg-white px-6 py-6 shadow-[0_24px_70px_-46px_rgba(15,23,42,0.42)] sm:px-8 sm:py-8">
-                    <div className="max-w-2xl">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <section className="rounded-[34px] border border-white/80 bg-white/94 px-6 py-6 shadow-[0_30px_82px_-52px_rgba(15,23,42,0.38)] sm:px-8 sm:py-8">
+                    <div className="max-w-xl">
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                             Plans
                         </p>
                         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
                             Change plan
                         </h2>
                         <p className="mt-2 text-sm leading-6 text-slate-600">
-                            Compare the current subscription with the other plans available to
-                            this workspace.
+                            Keep the current subscription visible while comparing the other plan
+                            options for this workspace.
                         </p>
                     </div>
 
                     {summaryData ? (
-                        <div className="mt-6 space-y-4">
-                            <div className="rounded-[28px] border border-emerald-200/70 bg-[linear-gradient(to_bottom_right,_rgba(236,253,245,0.92),_#ffffff)] p-5 sm:p-6">
-                                <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+                        <div className="mt-7 space-y-5">
+                            <div className="rounded-[30px] border border-sky-200/80 bg-[linear-gradient(135deg,_rgba(240,249,255,0.95),_rgba(255,255,255,0.98))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:p-7">
+                                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                                     <div className="min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
                                                 Current plan
                                             </p>
                                             <span
@@ -388,7 +390,7 @@ export default async function DashboardPage() {
                                             </span>
                                         </div>
 
-                                        <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+                                        <h3 className="mt-3 text-[1.9rem] font-semibold tracking-tight text-slate-950">
                                             {currentPlanName}
                                         </h3>
                                         <p className="mt-2 text-sm text-slate-600">
@@ -397,7 +399,7 @@ export default async function DashboardPage() {
                                     </div>
 
                                     <dl className="grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-2xl border border-emerald-200/70 bg-white/85 px-4 py-3">
+                                        <div className="rounded-2xl bg-white px-4 py-4 ring-1 ring-sky-100">
                                             <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                                                 Plan code
                                             </dt>
@@ -405,8 +407,7 @@ export default async function DashboardPage() {
                                                 {summaryData.subscription.planCode}
                                             </dd>
                                         </div>
-
-                                        <div className="rounded-2xl border border-emerald-200/70 bg-white/85 px-4 py-3">
+                                        <div className="rounded-2xl bg-white px-4 py-4 ring-1 ring-sky-100">
                                             <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                                                 Monthly
                                             </dt>
@@ -414,13 +415,12 @@ export default async function DashboardPage() {
                                                 {currentPlan?.monthlyPriceLabel ?? 'Unavailable'}
                                             </dd>
                                         </div>
-
-                                        <div className="rounded-2xl border border-emerald-200/70 bg-white/85 px-4 py-3">
+                                        <div className="rounded-2xl bg-white px-4 py-4 ring-1 ring-sky-100">
                                             <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                                                 Included quota
                                             </dt>
                                             <dd className="mt-2 text-sm font-semibold text-slate-950">
-                                                {currentPlan?.quotaTotal ?? quotaTotal} units
+                                                {currentPlanQuota} units
                                             </dd>
                                         </div>
                                     </dl>
@@ -428,14 +428,12 @@ export default async function DashboardPage() {
                             </div>
 
                             {availablePlans.length > 0 ? (
-                                <div className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_16px_45px_-38px_rgba(15,23,42,0.4)]">
+                                <div className="overflow-hidden rounded-[30px] border border-slate-200/70 bg-slate-50/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
                                     {availablePlans.map((plan, index) => (
                                         <article
                                             key={plan.planCode}
-                                            className={`grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_150px_140px_220px] lg:items-center ${
-                                                index < availablePlans.length - 1
-                                                    ? 'border-b border-slate-200/80'
-                                                    : ''
+                                            className={`grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_140px_140px_240px] lg:items-center ${
+                                                index > 0 ? 'border-t border-slate-200/70' : ''
                                             }`}
                                         >
                                             <div className="min-w-0">
@@ -443,7 +441,7 @@ export default async function DashboardPage() {
                                                     <h3 className="text-lg font-semibold text-slate-950">
                                                         {plan.displayName}
                                                     </h3>
-                                                    <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                                                    <span className="inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
                                                         {plan.planCode}
                                                     </span>
                                                 </div>
@@ -454,7 +452,7 @@ export default async function DashboardPage() {
                                                 </p>
                                             </div>
 
-                                            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3">
+                                            <div>
                                                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                                                     Monthly
                                                 </p>
@@ -463,7 +461,7 @@ export default async function DashboardPage() {
                                                 </p>
                                             </div>
 
-                                            <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 px-4 py-3">
+                                            <div>
                                                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                                                     Quota
                                                 </p>
@@ -476,29 +474,30 @@ export default async function DashboardPage() {
                                                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                                                     Change plan
                                                 </p>
-
-                                                {plan.planCode === 'FREE' ? (
-                                                    <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                                                        Included plan. No checkout required.
-                                                    </div>
-                                                ) : (
-                                                    <ChangePlanButton
-                                                        planCode={plan.planCode}
-                                                        displayName={plan.displayName}
-                                                    />
-                                                )}
+                                                <div className="mt-3">
+                                                    {plan.planCode === 'FREE' ? (
+                                                        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-600">
+                                                            Included plan. No checkout required.
+                                                        </div>
+                                                    ) : (
+                                                        <ChangePlanButton
+                                                            planCode={plan.planCode}
+                                                            displayName={plan.displayName}
+                                                        />
+                                                    )}
+                                                </div>
                                             </div>
                                         </article>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                <p className="rounded-[24px] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm text-slate-600">
                                     No other plans are available right now.
                                 </p>
                             )}
                         </div>
                     ) : (
-                        <p className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <p className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50/80 px-4 py-4 text-sm text-slate-600">
                             No dashboard summary available.
                         </p>
                     )}

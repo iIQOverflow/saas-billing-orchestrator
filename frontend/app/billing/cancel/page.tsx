@@ -29,25 +29,28 @@ export default function BillingCancelPage() {
     }
 
     return (
-        <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_30%),linear-gradient(to_bottom,_#f4f7fb,_#eef2f6_42%,_#f8fafc)] px-6 py-16 sm:px-8 sm:py-24">
-            <div className="mx-auto flex max-w-md items-center justify-center">
-                <section className="w-full rounded-[30px] border border-slate-200/80 bg-white/95 px-6 py-8 text-center shadow-[0_24px_70px_-46px_rgba(15,23,42,0.42)] sm:px-8 sm:py-10">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-700">
-                        Billing update
+        <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.12),_transparent_32%),linear-gradient(to_bottom,_#f6f8fb,_#eef2f6_46%,_#f7f9fc)] px-6 py-16 sm:px-8 sm:py-24">
+            <div className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-md items-center justify-center">
+                <section className="w-full overflow-hidden rounded-[32px] border border-white/80 bg-white/94 px-6 py-8 text-center shadow-[0_30px_80px_-48px_rgba(15,23,42,0.42)] backdrop-blur sm:px-8 sm:py-9">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+                        <span className="h-2.5 w-2.5 rounded-full bg-slate-500" />
+                    </div>
+                    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.22em] text-slate-700">
+                        Checkout not completed
                     </p>
-                    <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-                        No billing change
+                    <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                        No billing change applied
                     </h1>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
-                        No new billing change was applied. Your current plan remains in place when
-                        you return to the dashboard.
+                        Checkout was not completed, so no new billing change was applied. You can
+                        return and try again later.
                     </p>
 
-                    <div className="mt-8 flex flex-col gap-3">
+                    <div className="mt-8 flex flex-col gap-3 border-t border-slate-200/80 pt-6">
                         <button
                             type="button"
                             onClick={goToDashboardNow}
-                            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+                            className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white shadow-[0_20px_36px_-24px_rgba(15,23,42,0.9)] transition hover:-translate-y-0.5 hover:bg-slate-800"
                         >
                             Return to dashboard
                         </button>

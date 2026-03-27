@@ -62,19 +62,23 @@ export default function ConsumeUsageButton() {
     }
 
     return (
-        <div className="mt-4">
+        <div className="space-y-3">
             <button
                 type="button"
                 onClick={handleConsume}
                 disabled={isSubmitting}
-                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white shadow-[0_20px_36px_-24px_rgba(15,23,42,0.9)] transition hover:-translate-y-0.5 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
                 {isSubmitting ? 'Updating...' : 'Use 1 unit'}
             </button>
 
-            <p className="mt-2 text-sm text-slate-500">Demo a one-unit usage update.</p>
+            <p className="text-sm leading-6 text-slate-500">Demo a one-unit usage update.</p>
 
-            {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+            {error ? (
+                <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {error}
+                </p>
+            ) : null}
         </div>
     );
 }
