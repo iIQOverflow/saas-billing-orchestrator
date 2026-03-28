@@ -1,4 +1,4 @@
-# SaaS Billing Orchestrator
+# Multi-Tenant SaaS Billing Orchestrator
 
 **Production-minded multi-tenant billing system with a substantial Spring Boot backend and a thin Next.js frontend MVP in the same repository.**
 
@@ -21,7 +21,7 @@ It demonstrates browser-safe product flows on top of a backend that owns billing
 
 ## Project summary
 
-**SaaS Billing Orchestrator** is a backend-centered billing system for subscription-backed SaaS products. The most important work in this project is not the UI layer; it is the backend logic that keeps subscription identity, paid-plan fulfillment, and quota state consistent.
+**Multi-Tenant SaaS Billing Orchestrator** is a backend-centered billing system for subscription-backed SaaS products. The core of the project is not the UI layer; it is the backend logic that keeps tenant-scoped subscription identity, paid-plan fulfillment, and quota state consistent.
 
 A key hardening step was introducing **canonical `PlanCode`-based billing fulfillment**. The browser sends `planCode`, not Stripe `priceId`. The backend resolves Stripe commercial identifiers privately, writes the purchased `planCode` into Stripe subscription metadata at checkout time, and uses `invoice.paid` to canonicalize persisted subscription state and quota totals from backend-owned plan definitions. This fixed a real drift bug where persisted plan identity and quota totals could diverge.
 
@@ -77,7 +77,7 @@ The frontend is intentionally thin: Next.js, TypeScript, App Router, and plain `
 
 ## Architecture at a glance
 
-The project is intentionally backend-centered. The frontend stays thin, while the backend owns plan identity, checkout behavior, webhook fulfillment, quota state, and browser-safe product contracts.
+The project is intentionally backend-centered. The frontend stays thin, while the backend owns tenant-aware plan identity, checkout behavior, webhook fulfillment, quota state, and browser-safe product contracts.
 
 ### Backend
 
@@ -149,7 +149,7 @@ Frontend MVP status:
 - thin and backend-driven
 - Next.js + TypeScript + App Router + plain `fetch`
 - no Redux / React Query / Axios
-- Final QA passed for login, protected dashboard access, dashboard load, usage consume flow, quota refresh, checkout redirect, success/cancel return, and logout behavior.
+- final QA passed for login, protected dashboard access, dashboard load, usage consume flow, quota refresh, checkout redirect, success/cancel return, and logout behavior.
 
 ---
 
@@ -231,6 +231,7 @@ STRIPE_PRICE_ID_PRO=price_xxx
 ```
 
 #### Stripe configuration (Sandbox)
+
 1. Create a test customer in Stripe.
 2. Create two products/prices in Stripe for:
   - Plus
@@ -279,6 +280,7 @@ VALUES (
   now()
 );
 ```
+
 After inserting the seeded user, log in with:
 
 - email: admin@acme.com
@@ -353,8 +355,3 @@ The current priority is packaging, demo clarity, and interview readiness rather 
 - Broader billing policy work and frontend architecture expansion are deferred until after packaging and deployment-readiness work.
 
 ---
-
-```
-
-One small optional cleanup after you paste it: if you want the markdown style to look even more consistent, convert the `*` bullets inside the unchanged Local run instructions to `-` later, but I left that section untouched as requested.
-```
