@@ -37,3 +37,4 @@ build/
 /start-db-tunnel.sh
 /note.md
 /docs/
+.DS_Store
