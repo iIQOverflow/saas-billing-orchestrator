@@ -2,11 +2,20 @@
 
 **Production-minded multi-tenant billing system with a substantial Spring Boot backend and a thin Next.js frontend MVP in the same repository.**
 
-## Live demo
+It demonstrates browser-safe product flows on top of a backend that owns billing rules, quota behavior, and canonical subscription fulfillment.
 
-**Demo URL:** [https://AWS-DEPLOYED-FRONTEND-URL](https://AWS-DEPLOYED-FRONTEND-URL)
+## Demo preview
 
+**Live demo:** deployment coming next
+
+**Demo flow**
 ![Demo flow GIF](resources/demo/demo-flow.gif)
+
+**Dashboard main**
+![Dashboard Main](resources/screenshots/dashboard-main.png)
+
+**Change plan**
+![Dashboard Change Plan](resources/screenshots/dashboard-change-plan.png)
 
 ---
 
@@ -22,7 +31,7 @@ A key hardening step in the project was introducing **canonical `PlanCode`-based
 
 ## What is implemented
 
-Current implemented browser-safe product flow:
+Current implemented product flow:
 
 1. login
 2. dashboard loads backend-driven data
@@ -46,13 +55,13 @@ Current frontend MVP status:
 - thin and backend-driven
 - Next.js + TypeScript + App Router + plain `fetch`
 - no Redux / React Query / Axios
+- Final QA passed for login, protected dashboard access, dashboard load, usage consume flow, quota refresh, checkout redirect, success/cancel return, and logout behavior.
 
 ---
 
 ## Architecture at a glance
 
-The project uses a thin frontend and a backend-centered architecture.
-
+The project is intentionally backend-centered: the frontend stays thin, while the backend owns contracts, billing rules, and fulfillment behavior.
 ### Backend
 
 - Spring Boot backend remains the source of truth for contracts and business behavior
@@ -133,10 +142,12 @@ The point of the demo is not frontend complexity. It is that the frontend is thi
 ```text
 .
 ├── frontend/                    # Next.js frontend MVP
+├── resources/demo/             # demo GIF
+├── resources/screenshots/      # README screenshots
 ├── src/main/java/...           # Spring Boot backend source
-├── src/main/resources/         # application config + Flyway migrations
-├── docker-compose.yml          # local PostgreSQL / Redis
-└── pom.xml                     # backend build
+├── src/main/resources/         # app config + Flyway migrations
+├── docker-compose.yml
+└── pom.xml
 ```
 
 
@@ -148,11 +159,11 @@ The frontend and backend live in the same repository, but the backend remains th
 
 ### Prerequisites
 
-* Java 17+
-* Maven 3.9+
-* Node.js 18+
-* Docker Desktop
-* Stripe test keys for checkout testing
+- Java 17+
+- Maven 3.9+
+- Node.js 18+
+- Docker Desktop
+- Stripe test keys for checkout testing
 
 ### 1. Start local infrastructure
 
@@ -183,13 +194,9 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 QUOTA_RECONCILIATION_DELAY_MS=300000
 # --- Stripe ---
-# 1. The Frontend Tokenizer (Starts with pk_test_)
 STRIPE_PUBLISHABLE_KEY=pk_test_xxx
-# 2. The God Key: Outbound Authority (Starts with sk_test_)
 STRIPE_SECRET_KEY=sk_test_xxx
-# 3. The Webhook Lock: Inbound Verification (Starts with whsec_)
 STRIPE_WEBHOOK_SECRET=whsec_xxx
-# 4. The Price Id (Starts with price_)
 STRIPE_PRICE_ID_PLUS=price_xxx
 STRIPE_PRICE_ID_PRO=price_xxx
 ```
@@ -243,6 +250,10 @@ VALUES (
   now()
 );
 ```
+After inserting the seeded user, log in with:
+
+- email: admin@acme.com
+- password: the plain-text password you used when generating the BCrypt hash
 
 ### 5. Run the frontend
 
@@ -280,24 +291,24 @@ stripe trigger invoice.paid
 
 ---
 
-## Current scope and boundaries
+## Scope and boundaries
 
 This project is intentionally strong in backend behavior and intentionally thin in frontend architecture.
 
-Current scope:
+Scope:
 
-* substantial, production-minded backend
-* thin frontend MVP accepted for interview/demo use
-* dashboard-centered product flow
-* simple success/cancel return pages
+- substantial, production-minded backend
+- thin frontend MVP accepted for interview/demo use
+- dashboard-centered product flow
+- simple success/cancel return pages
 
-Current boundaries:
+Boundaries:
 
-* backend remains the source of truth
-* browser uses only browser-safe APIs
-* `/api/v1/**` remains machine-facing
-* browser-safe responses do not expose machine-facing values
-* `plan_code` persistence remains string-backed for now
+- backend remains the source of truth
+- browser uses only browser-safe APIs
+- `/api/v1/**` remains machine-facing
+- browser-safe responses do not expose machine-facing values
+- `plan_code` persistence remains string-backed for now
 
 The current priority is packaging, demo clarity, and interview readiness rather than expanding project scope.
 
@@ -305,26 +316,10 @@ The current priority is packaging, demo clarity, and interview readiness rather 
 
 ## Trade-offs and deferred work
 
-* The frontend is intentionally thin and backend-driven; it is not designed as a frontend-heavy architecture exercise.
-* Browser-safe APIs remain separate from machine-facing `/api/v1/**`.
-* `subscriptions.plan_code` remains string-backed for now; direct JPA enum mapping is deferred.
-* Success/cancel pages are intentionally simple.
-* Broader billing policy changes, frontend architecture expansion, and new library adoption are explicitly deferred until after packaging and demo readiness.
+- The frontend is intentionally thin and backend-driven; it is not designed as a frontend-heavy architecture exercise.
+- Browser-safe APIs remain separate from machine-facing `/api/v1/**`.
+- `subscriptions.plan_code` remains string-backed for now; direct JPA enum mapping is deferred.
+- Success/cancel pages are intentionally simple.
+- Broader billing policy changes, frontend architecture expansion, and new library adoption are explicitly deferred until after packaging and demo readiness.
 
 ---
-
-## Screenshots
-
-![Login page](resources/screenshots/login-page.png)
-
-![Dashboard Main](resources/screenshots/dashboard-main.png)
-
-![Dashboard Quota](resources/screenshots/dashboard-quota.png)
-
-![Dashboard Change Plan](resources/screenshots/dashboard-change-plan.png)
-
-![Stripe Checkout](resources/screenshots/stripe-checkout.png)
-
-![Checkout Success](resources/screenshots/checkout-success.png)
-
-![Checkout Cancel](resources/screenshots/checkout-cancel.png)
