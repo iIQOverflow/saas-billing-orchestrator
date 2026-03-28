@@ -1,9 +1,8 @@
 # Multi-Tenant SaaS Billing Orchestrator
 
-**Production-minded multi-tenant billing system with a substantial Spring Boot backend and a thin Next.js frontend MVP in the same repository.**
+**Production-minded Spring Boot backend for multi-tenant SaaS billing, canonical subscription fulfillment, Redis-backed quota enforcement, and a thin Next.js frontend MVP.**
 
-It demonstrates browser-safe product flows on top of a backend that owns billing rules, quota behavior, and canonical subscription fulfillment.
-
+It demonstrates browser-safe product flows on top of a backend that owns billing rules, tenant-safe product contracts, and quota behavior.
 ## Demo preview
 
 **Live demo:** not currently deployed. See the demo preview below.
