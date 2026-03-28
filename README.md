@@ -6,7 +6,7 @@ It demonstrates browser-safe product flows on top of a backend that owns billing
 
 ## Demo preview
 
-**Live demo:** deployment coming next
+**Live demo:** not currently deployed. See the demo preview below.
 
 **Demo flow**
 ![Demo flow GIF](resources/demo/demo-flow.gif)
@@ -21,17 +21,102 @@ It demonstrates browser-safe product flows on top of a backend that owns billing
 
 ## Project summary
 
-**SaaS Billing Orchestrator** is a backend-centered billing system with a thin frontend MVP for demo and interview use.
+**SaaS Billing Orchestrator** is a backend-centered billing system for subscription-backed SaaS products. The most important work in this project is not the UI layer; it is the backend logic that keeps subscription identity, paid-plan fulfillment, and quota state consistent.
 
-The backend is the core of the project. It owns contracts, billing rules, subscription fulfillment, quota behavior, and browser-safe product flows. The frontend under `/frontend` is intentionally thin and backend-driven: it exists to demonstrate real user flows such as login, dashboard-driven quota visibility, usage consumption, and paid plan change through Stripe checkout.
+A key hardening step was introducing **canonical `PlanCode`-based billing fulfillment**. The browser sends `planCode`, not Stripe `priceId`. The backend resolves Stripe commercial identifiers privately, writes the purchased `planCode` into Stripe subscription metadata at checkout time, and uses `invoice.paid` to canonicalize persisted subscription state and quota totals from backend-owned plan definitions. This fixed a real drift bug where persisted plan identity and quota totals could diverge.
 
-A key hardening step in the project was introducing **canonical `PlanCode`-based fulfillment**. The browser sends `planCode`, the backend resolves Stripe `priceId` privately, checkout stores the purchased `planCode` in Stripe subscription metadata, and `invoice.paid` fulfillment updates persisted subscription and quota state from that canonical plan identity. This fixed a real drift bug where persisted plan identity and quota totals could diverge.
+The project also draws a clear **browser-safe product boundary**. Browser flows use dedicated JWT-protected endpoints and do not consume machine-facing `/api/v1/**` APIs. Browser-safe responses do not expose tenant API keys, Stripe customer IDs, Stripe price IDs, or other machine-facing identifiers.
+
+Beyond billing correctness, the backend includes **idempotent Stripe webhook processing** and **Redis-backed quota enforcement** with atomic decrement and anti-stampede protection when quota state is cold in cache. The frontend under `/frontend` is intentionally thin and exists to demonstrate these backend-owned product flows.
+
+---
+
+## Key engineering decisions
+
+### 1. Canonical billing fulfillment with backend-owned commercial truth
+
+The application uses `PlanCode` as the canonical plan identity:
+
+- `FREE`
+- `PLUS`
+- `PRO`
+
+The browser sends `planCode`, not Stripe `priceId`. The backend validates the requested plan, rejects `FREE` for paid Stripe checkout, and resolves Stripe price IDs privately from backend configuration.
+
+Checkout writes the purchased `planCode` into Stripe subscription metadata. On `invoice.paid`, the backend reads that metadata back and canonicalizes persisted subscription state from backend-owned plan definitions. Persisted `subscription.plan_code`, `subscription.quota_total`, `subscription.quota_used`, `subscription.status`, and `tenant.quota_balance` are updated from the canonical plan model rather than inferred indirectly from Stripe pricing data.
+
+This matters because it fixes a real billing drift bug: persisted plan identity and quota totals can no longer silently diverge.
+
+### 2. Browser-safe product boundary, separate from machine-facing APIs
+
+The browser uses dedicated product endpoints such as:
+
+- `POST /api/auth/login`
+- `GET /api/me`
+- `GET /api/dashboard/summary`
+- `POST /api/demo/usage/consume`
+- `POST /api/checkout/create-session`
+
+These flows are JWT-protected and intentionally separate from `/api/v1/**`, which remains machine-facing. Browser-safe responses do not expose machine-facing identifiers or Stripe commercial IDs.
+
+### 3. Idempotent Stripe webhook processing
+
+Duplicate `invoice.paid` deliveries are blocked by a database-backed idempotency barrier. Canonical fulfillment logic runs only after the event lock is acquired, so duplicate webhook delivery does not double-apply subscription resets or quota updates.
+
+### 4. Redis-backed quota correctness under concurrent access
+
+Quota consumption uses an atomic Redis decrement script on the hot path. When quota state is missing from Redis, `M2MGatewayService` uses a per-tenant local JVM lock to prevent cold-cache stampede against PostgreSQL before reinitializing quota state and retrying consumption.
+
+This is worth highlighting as a correctness and control-path decision, not as a vague “high concurrency” claim.
+
+### 5. Thin frontend, backend-owned contracts
+
+The frontend is intentionally thin: Next.js, TypeScript, App Router, and plain `fetch`. It demonstrates real product flows, but the backend remains the source of truth for contracts, billing behavior, and fulfillment logic.
+
+---
+
+## Architecture at a glance
+
+The project is intentionally backend-centered. The frontend stays thin, while the backend owns plan identity, checkout behavior, webhook fulfillment, quota state, and browser-safe product contracts.
+
+### Backend
+
+- Spring Boot backend for product contracts and billing behavior
+- PostgreSQL for persisted tenant, subscription, and payment-event state
+- Stripe for paid checkout and subscription webhook fulfillment
+- JWT for browser-safe authenticated flows
+- Redis for quota enforcement and fast quota state access
+
+### Browser-safe boundary
+
+The browser talks only to browser-safe endpoints. It does not use `/api/v1/**`, and it does not receive:
+
+- `tenantApiKey`
+- `stripeCustomerId`
+- Stripe `priceId`
+- other machine-facing secrets or identifiers
+
+### Machine-facing quota path
+
+`/api/v1/**` remains machine-facing. That path uses API-key interception plus Redis-backed quota consumption. Redis quota decrement is atomic, and cold-cache recovery is guarded by anti-stampede protection in `M2MGatewayService`.
+
+### Frontend (`/frontend`)
+
+The frontend exists to exercise the implemented backend flows:
+
+- login
+- dashboard summary
+- demo usage consumption
+- plan change / checkout redirect
+- success / cancel return
+
+It is intentionally thin and backend-driven rather than a frontend-heavy architecture exercise.
 
 ---
 
 ## What is implemented
 
-Current implemented product flow:
+The current implemented product flow is:
 
 1. login
 2. dashboard loads backend-driven data
@@ -41,7 +126,7 @@ Current implemented product flow:
 6. Stripe success/cancel return works
 7. dashboard reflects refreshed backend state after return
 
-Browser-safe backend endpoints implemented for the frontend MVP:
+Implemented browser-safe backend surface for the frontend MVP:
 
 - `POST /api/auth/login`
 - `GET /api/me`
@@ -49,7 +134,16 @@ Browser-safe backend endpoints implemented for the frontend MVP:
 - `POST /api/demo/usage/consume`
 - `POST /api/checkout/create-session`
 
-Current frontend MVP status:
+Implemented backend integrity work worth highlighting:
+
+- canonical `PlanCode`-based billing fulfillment
+- backend-owned Stripe price resolution
+- webhook idempotency barrier for duplicate `invoice.paid`
+- Redis atomic quota decrement
+- anti-stampede quota initialization in `M2MGatewayService`
+- persistence cleanup from `subscriptions.plan_tier` to `subscriptions.plan_code`
+
+Frontend MVP status:
 
 - implemented under `/frontend`
 - thin and backend-driven
@@ -59,81 +153,19 @@ Current frontend MVP status:
 
 ---
 
-## Architecture at a glance
-
-The project is intentionally backend-centered: the frontend stays thin, while the backend owns contracts, billing rules, and fulfillment behavior.
-### Backend
-
-- Spring Boot backend remains the source of truth for contracts and business behavior
-- PostgreSQL stores tenant, subscription, and billing state
-- Redis supports quota-related backend behavior
-- Stripe handles paid checkout and subscription fulfillment
-- JWT secures browser-safe authenticated flows
-
-### Frontend (`/frontend`)
-
-- Next.js
-- TypeScript
-- App Router
-- plain `fetch`
-- minimal proxy/BFF-style layer for browser-safe backend calls
-- JWT handled through HttpOnly cookie flow, not `localStorage` or `sessionStorage`
-
-### Boundary design
-
-- browser uses only browser-safe endpoints
-- browser does **not** use `/api/v1/**`
-- browser-safe responses do **not** expose:
-  - `tenantApiKey`
-  - `stripeCustomerId`
-  - Stripe `priceId`
-  - machine-facing secrets
-
----
-
-## Key engineering decisions
-
-### 1. Added browser-safe endpoints instead of reusing machine-facing APIs
-
-The frontend uses product-shaped endpoints such as `/api/me` and `/api/dashboard/summary` rather than consuming `/api/v1/**`. This keeps browser contracts safer and avoids leaking machine-facing identifiers into the UI.
-
-### 2. Made `PlanCode` the canonical application plan identity
-
-The application plan model is:
-
-- `FREE`
-- `PLUS`
-- `PRO`
-
-This separates business plan identity from Stripe-specific commercial identifiers.
-
-### 3. Browser sends `planCode`, not Stripe `priceId`
-
-Checkout validates `planCode` strictly, rejects `FREE` for Stripe checkout, and resolves Stripe `priceId` privately on the backend.
-
-### 4. Canonicalized fulfillment from `PlanCode`
-
-Checkout writes the purchased `planCode` into Stripe subscription metadata. `invoice.paid` reads that metadata back and updates persisted subscription and quota state canonically. This fixed the drift bug where plan identity and quota totals could diverge.
-
-### 5. Cleaned up persisted naming from `plan_tier` to `plan_code`
-
-The persistence model was aligned through Flyway. Persistence remains string-backed for now.
-
----
-
 ## Demo flow
 
 Recommended reviewer / interviewer flow:
 
-1. **Log in** through the frontend using the browser-safe authentication flow.
-2. **Load the dashboard** and verify that subscription and quota data come from the backend.
+1. **Log in** through the browser-safe authentication flow.
+2. **Load the dashboard** and confirm subscription and quota data come from the backend.
 3. **Consume usage** from the UI to exercise the browser-safe usage path.
-4. **Refresh quota** and confirm updated backend state is reflected in the dashboard.
-5. **Start a paid plan change** from the dashboard. The browser sends `planCode`; the backend handles Stripe mapping privately.
+4. **Refresh quota** and verify updated backend state is reflected in the dashboard.
+5. **Start a paid plan change** from the dashboard. The browser sends `planCode`; the backend resolves Stripe pricing privately.
 6. **Return from Stripe** through either the success or cancel path.
-7. **Verify refreshed state** after return on the dashboard.
+7. **Verify refreshed backend state** after return.
 
-The point of the demo is not frontend complexity. It is that the frontend is thin while the backend owns billing logic, fulfillment behavior, and browser-safe product contracts.
+The point of the demo is not frontend complexity. It is to show a thin frontend exercising backend-owned billing and quota flows.
 
 ---
 
@@ -141,7 +173,7 @@ The point of the demo is not frontend complexity. It is that the frontend is thi
 
 ```text
 .
-├── frontend/                    # Next.js frontend MVP
+├── frontend/                   # Next.js frontend MVP
 ├── resources/demo/             # demo GIF
 ├── resources/screenshots/      # README screenshots
 ├── src/main/java/...           # Spring Boot backend source
@@ -150,10 +182,7 @@ The point of the demo is not frontend complexity. It is that the frontend is thi
 └── pom.xml
 ```
 
-
 The frontend and backend live in the same repository, but the backend remains the source of truth for contracts and business behavior.
-
----
 
 ## Local run instructions
 
@@ -226,14 +255,14 @@ Use SQL to create a tenant, user, and subscription for local testing:
 
 ```sql
 INSERT INTO tenants(company_name, tenant_api_key, quota_balance, create_time, update_time)
-VALUES ('Acme Inc', 'acme_prod_demo_key', 10000, now(), now());
+VALUES ('Acme Inc', 'acme_prod_demo_key', 1000, now(), now());
 
 INSERT INTO subscriptions(tenant_id, stripe_customer_id, plan_code, quota_total, quota_used, status, create_time, update_time)
 VALUES (
   (SELECT id FROM tenants WHERE tenant_api_key = 'acme_prod_demo_key'),
   'cus_test_acme_001',
   'PRO',
-  10000,
+  1000,
   0,
   'ACTIVE',
   now(),
@@ -293,22 +322,23 @@ stripe trigger invoice.paid
 
 ## Scope and boundaries
 
-This project is intentionally strong in backend behavior and intentionally thin in frontend architecture.
+This project is intentionally strongest in backend billing correctness and backend-owned product contracts.
 
 Scope:
 
-- substantial, production-minded backend
-- thin frontend MVP accepted for interview/demo use
-- dashboard-centered product flow
-- simple success/cancel return pages
+- substantial Spring Boot backend
+- browser-safe product flow for login, dashboard, usage, and checkout
+- thin frontend MVP for demo and interview use
+- canonical billing fulfillment from `PlanCode`
+- machine-facing quota path kept separate from browser flows
 
 Boundaries:
 
-- backend remains the source of truth
-- browser uses only browser-safe APIs
-- `/api/v1/**` remains machine-facing
-- browser-safe responses do not expose machine-facing values
-- `plan_code` persistence remains string-backed for now
+- the browser does not use `/api/v1/**`
+- browser-safe responses do not expose machine-facing identifiers
+- the frontend stays thin and backend-driven
+- `subscriptions.plan_code` remains string-backed for now
+- this README describes implemented behavior, not future billing redesign ideas
 
 The current priority is packaging, demo clarity, and interview readiness rather than expanding project scope.
 
@@ -316,10 +346,15 @@ The current priority is packaging, demo clarity, and interview readiness rather 
 
 ## Trade-offs and deferred work
 
-- The frontend is intentionally thin and backend-driven; it is not designed as a frontend-heavy architecture exercise.
-- Browser-safe APIs remain separate from machine-facing `/api/v1/**`.
+- The frontend is intentionally thin; this project is not positioned as a frontend architecture exercise.
+- Browser-safe APIs remain separate from machine-facing `/api/v1/**` rather than collapsing both flows into one surface.
 - `subscriptions.plan_code` remains string-backed for now; direct JPA enum mapping is deferred.
-- Success/cancel pages are intentionally simple.
-- Broader billing policy changes, frontend architecture expansion, and new library adoption are explicitly deferred until after packaging and demo readiness.
+- Success and cancel return pages remain intentionally simple.
+- Broader billing policy work and frontend architecture expansion are deferred until after packaging and deployment-readiness work.
 
 ---
+
+```
+
+One small optional cleanup after you paste it: if you want the markdown style to look even more consistent, convert the `*` bullets inside the unchanged Local run instructions to `-` later, but I left that section untouched as requested.
+```
