@@ -2,26 +2,31 @@
 
 **Production-minded Spring Boot backend for multi-tenant SaaS billing, canonical subscription fulfillment, Redis-backed quota enforcement, and a thin Next.js frontend MVP.**
 
-It demonstrates browser-safe product flows on top of a backend that owns billing rules, tenant-safe product contracts, and quota behavior.
+It demonstrates browser-safe product flows on top of a backend that owns billing, browser-safe product contracts, and quota behavior.
 
+## Live demo / deployment
+
+**Public demo:** [https://demo.jyfeng.net](https://demo.jyfeng.net)
+
+**Note:** The public demo currently uses Stripe in test mode for checkout and webhook flows.
+
+Phase-1 interview/demo deployment is live on **AWS Lightsail** in **ap-southeast-2**. The deployment is intentionally simple and cost-aware: a single public origin with **Nginx + HTTPS**, with frontend and backend running on the same host and the core product flow verified end to end.
 ## Demo preview
 
-**Live demo:** not currently deployed. See the demo preview below.
-
-**Demo flow**
+**Demo flow**  
 ![Demo flow GIF](resources/demo/demo-flow.gif)
 
-**Dashboard main**
+**Dashboard main**  
 ![Dashboard Main](resources/screenshots/dashboard-main.png)
 
-**Change plan**
+**Change plan**  
 ![Dashboard Change Plan](resources/screenshots/dashboard-change-plan.png)
 
 ---
 
 ## Project summary
 
-**Multi-Tenant SaaS Billing Orchestrator** is a backend-centered billing system for subscription-backed SaaS products. The core of the project is not the UI layer; it is the backend logic that keeps tenant-scoped subscription identity, paid-plan fulfillment, and quota state consistent.
+**Multi-Tenant SaaS Billing Orchestrator** is a backend-centered billing system for subscription-backed SaaS products. The project is intentionally backend-first: its main value is the logic that keeps tenant-scoped subscription identity, paid-plan fulfillment, and quota state consistent.
 
 A key hardening step was introducing **canonical `PlanCode`-based billing fulfillment**. The browser sends `planCode`, not Stripe `priceId`. The backend resolves Stripe commercial identifiers privately, writes the purchased `planCode` into Stripe subscription metadata at checkout time, and uses `invoice.paid` to canonicalize persisted subscription state and quota totals from backend-owned plan definitions. This fixed a real drift bug where persisted plan identity and quota totals could diverge.
 
@@ -114,6 +119,26 @@ It is intentionally thin and backend-driven rather than a frontend-heavy archite
 
 ---
 
+## Deployment architecture
+
+The current public deployment is intentionally pragmatic rather than overbuilt.
+
+- **Target:** AWS Lightsail
+- **Region:** `ap-southeast-2`
+- **Shape:** single Lightsail host
+- **Public edge:** Nginx reverse proxy
+- **TLS:** HTTPS enabled, with HTTP redirecting to HTTPS
+- **Frontend and backend:** deployed on the same host
+- **PostgreSQL and Redis:** self-hosted on the same machine via Docker Compose
+- **Process management:** backend and frontend managed by systemd
+- **Internal exposure:** backend, frontend, PostgreSQL, and Redis are bound to loopback only
+- **Frontend internal backend target:** `BACKEND_BASE_URL=http://127.0.0.1:8080`
+- **Webhook path:** `/api/webhooks/stripe`
+
+This keeps the public surface small while still providing a real deployed environment for interview/demo use.
+
+---
+
 ## What is implemented
 
 The current implemented product flow is:
@@ -149,7 +174,7 @@ Frontend MVP status:
 - thin and backend-driven
 - Next.js + TypeScript + App Router + plain `fetch`
 - no Redux / React Query / Axios
-- final QA passed for login, protected dashboard access, dashboard load, usage consume flow, quota refresh, checkout redirect, success/cancel return, and logout behavior.
+- final QA passed for login, protected dashboard access, dashboard load, usage consume flow, quota refresh, checkout redirect, success/cancel return, and logout behavior
 
 ---
 
@@ -234,11 +259,11 @@ STRIPE_PRICE_ID_PRO=price_xxx
 
 1. Create a test customer in Stripe.
 2. Create two products/prices in Stripe for:
-  - Plus
-  - Pro
+    - Plus
+    - Pro
 3. Copy the resulting Stripe price IDs into:
-  - `STRIPE_PRICE_ID_PLUS`
-  - `STRIPE_PRICE_ID_PRO`
+    - `STRIPE_PRICE_ID_PLUS`
+    - `STRIPE_PRICE_ID_PRO`
 
 ### 3. Run the backend
 
@@ -322,6 +347,24 @@ stripe trigger invoice.paid
 
 ---
 
+## Operational notes and trade-offs
+
+The current deployment is designed for **demo credibility, low cost, and operational clarity**, not for pretending to be a fully scaled production stack.
+
+- Live interview/demo deployment: [https://demo.jyfeng.net](https://demo.jyfeng.net)
+- Current target: AWS Lightsail (`ap-southeast-2`)
+- Current shape: single host, Nginx reverse proxy, HTTPS enabled
+- Frontend and backend run on the same host
+- PostgreSQL and Redis are self-hosted via Docker Compose on the same machine
+- Backend, frontend, PostgreSQL, and Redis are bound to loopback only
+- Backend and frontend are managed with systemd
+- GitHub Actions redeploy is working for the current Lightsail setup
+- Current host is the smaller $7 / 1 GB plan with swap added for stability
+- Deployment is good enough for interview/demo use, but it is still a constrained box
+- `subscriptions.plan_code` remains string-backed for now; direct JPA enum mapping is deferred
+- Success and cancel return pages remain intentionally simple
+- Broader billing-policy work, infrastructure expansion, and frontend architecture expansion are deferred
+
 ## Scope and boundaries
 
 This project is intentionally strongest in backend billing correctness and backend-owned product contracts.
@@ -341,17 +384,3 @@ Boundaries:
 - the frontend stays thin and backend-driven
 - `subscriptions.plan_code` remains string-backed for now
 - this README describes implemented behavior, not future billing redesign ideas
-
-The current priority is packaging, demo clarity, and interview readiness rather than expanding project scope.
-
----
-
-## Trade-offs and deferred work
-
-- The frontend is intentionally thin; this project is not positioned as a frontend architecture exercise.
-- Browser-safe APIs remain separate from machine-facing `/api/v1/**` rather than collapsing both flows into one surface.
-- `subscriptions.plan_code` remains string-backed for now; direct JPA enum mapping is deferred.
-- Success and cancel return pages remain intentionally simple.
-- Broader billing policy work and frontend architecture expansion are deferred until after packaging and deployment-readiness work.
-
----
