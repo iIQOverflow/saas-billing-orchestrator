@@ -6,11 +6,13 @@ It demonstrates browser-safe product flows on top of a backend that owns billing
 
 ## Live demo / deployment
 
-**Public demo:** [https://demo.jyfeng.net](https://demo.jyfeng.net)
+**URL:** [https://demo.jyfeng.net](https://demo.jyfeng.net)  
+**Demo account:** `demo@jyfeng.net` / `DemoOnly123!`
 
-**Note:** The public demo currently uses Stripe in test mode for checkout and webhook flows.
+Uses Stripe **test mode** and non-sensitive sample data.
 
-Phase-1 interview/demo deployment is live on **AWS Lightsail** in **ap-southeast-2**. The deployment is intentionally simple and cost-aware: a single public origin with **Nginx + HTTPS**, with frontend and backend running on the same host and the core product flow verified end to end.
+Live on **AWS Lightsail** in **ap-southeast-2** with a simple single-host deployment behind **Nginx + HTTPS**.
+
 ## Demo preview
 
 **Demo flow**  
@@ -80,9 +82,11 @@ The frontend is intentionally thin: Next.js, TypeScript, App Router, and plain `
 
 ---
 
-## Architecture at a glance
+## Runtime architecture at a glance
 
-The project is intentionally backend-centered. The frontend stays thin, while the backend owns tenant-aware plan identity, checkout behavior, webhook fulfillment, quota state, and browser-safe product contracts.
+![Architecture](resources/demo/architecture_v1.png)
+
+The diagram below shows the runtime request flow for the live single-host deployment: browser traffic enters through Nginx over HTTPS, the thin Next.js frontend calls browser-safe backend APIs, Stripe checkout/webhook flows remain backend-owned, and PostgreSQL/Redis stay internal to the host.
 
 ### Backend
 
